@@ -1,3 +1,4 @@
+use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 
@@ -374,7 +375,7 @@ pub struct Line {
     pub current_limits2: Option<CurrentLimits>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component)]
 pub struct Switch {
     pub id: String,
     pub kind: SwitchKind,
@@ -386,7 +387,7 @@ pub struct Switch {
     pub voltage_level_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum SwitchKind {
     Breaker,
