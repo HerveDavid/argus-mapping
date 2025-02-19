@@ -1,4 +1,4 @@
-use crate::iidm_ecs::PhysicalAssetRegistry;
+use crate::iidm_ecs::{IdentifiableExt, PhysicalAssetRegistry};
 
 use super::Line;
 use bevy_ecs::prelude::*;
@@ -18,6 +18,12 @@ impl Line {
         registery: &mut PhysicalAssetRegistry,
     ) {
         registery.spawn_physical_asset(commands, self.id.clone());
+    }
+}
+
+impl IdentifiableExt for Line {
+    fn id(&self) -> String {
+        self.id.clone()
     }
 }
 
@@ -81,7 +87,7 @@ mod tests {
         let test_id = line.id.clone();
         {
             let mut commands = Commands::new(&mut queue, &world);
-            let entity = registry.spawn_with_component(&mut commands, test_id.clone(), line);
+            let entity = registry.spawn_component(&mut commands, line);
 
             queue.apply(&mut world);
 
@@ -120,10 +126,9 @@ mod tests {
         let mut registry = PhysicalAssetRegistry::default();
         let line = Line::from_json_str(&LINE_STR)?;
 
-        let test_id = line.id.clone();
         {
             let mut commands = Commands::new(&mut queue, &world);
-            let _ = registry.spawn_with_component(&mut commands, test_id, line);
+            let _ = registry.spawn_component(&mut commands, line);
 
             queue.apply(&mut world);
 

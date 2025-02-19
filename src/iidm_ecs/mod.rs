@@ -1,10 +1,14 @@
 mod ecs_switch;
 
-use bevy_ecs::{label::DynEq, prelude::*};
+use bevy_ecs::prelude::*;
 use std::collections::HashMap;
 
 #[derive(Component, Debug)]
 pub struct Identifiable(pub String);
+
+pub trait IdentifiableExt {
+    fn id(&self) -> String;
+}
 
 #[derive(Resource, Default)]
 pub struct PhysicalAssetRegistry(pub HashMap<String, Entity>);
@@ -16,17 +20,11 @@ impl PhysicalAssetRegistry {
         entity
     }
 
-    pub fn spawn_with_component<S, C>(
-        &mut self,
-        commands: &mut Commands,
-        id: S,
-        component: C,
-    ) -> Entity
+    pub fn spawn_component<C>(&mut self, commands: &mut Commands, component: C) -> Entity
     where
-        S: Into<String>,
-        C: Component,
+        C: Component + IdentifiableExt,
     {
-        let id = id.into();
+        let id = component.id();
         match self.0.get(&id) {
             Some(&entity) => {
                 commands.entity(entity).insert(component);
