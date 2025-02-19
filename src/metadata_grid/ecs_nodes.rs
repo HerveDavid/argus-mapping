@@ -1,9 +1,8 @@
 use bevy_ecs::prelude::*;
 use std::collections::HashMap;
 
-use crate::MetadataGrid;
-
 use super::components::EquipmentId;
+use super::MetadataGrid;
 
 #[derive(Resource, Default)]
 pub struct NodeRegistry(pub HashMap<String, Entity>);

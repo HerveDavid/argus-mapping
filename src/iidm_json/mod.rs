@@ -1,3 +1,7 @@
+mod line;
+mod loader;
+mod network;
+
 use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
@@ -6,28 +10,50 @@ use serde::{Deserialize, Serialize};
 pub struct Network {
     pub version: String,
     pub id: String,
+
     #[serde(rename = "caseDate")]
     pub case_date: DateTime<FixedOffset>,
+
     #[serde(rename = "forecastDistance")]
     pub forecast_distance: i32,
+
     #[serde(rename = "sourceFormat")]
     pub source_format: String,
+
     #[serde(rename = "minimumValidationLevel")]
     pub minimum_validation_level: String,
+
+    #[serde(default)]
     pub substations: Vec<Substation>,
+
+    #[serde(default)]
     pub lines: Vec<Line>,
+
     #[serde(rename = "threeWindingsTransformers")]
+    #[serde(default)]
     pub three_windings_transformers: Vec<ThreeWindingsTransformer>,
+
+    #[serde(default)]
     pub switches: Vec<Switch>,
+
     #[serde(rename = "shuntCompensators")]
+    #[serde(default)]
     pub shunt_compensators: Vec<ShuntCompensator>,
+
     #[serde(rename = "staticVarCompensators")]
+    #[serde(default)]
     pub static_var_compensators: Vec<StaticVarCompensator>,
+
     #[serde(rename = "danglingLines")]
+    #[serde(default)]
     pub dangling_lines: Vec<DanglingLine>,
+
     #[serde(rename = "tieLines")]
+    #[serde(default)]
     pub tie_lines: Vec<TieLine>,
+
     #[serde(rename = "hvdcLines")]
+    #[serde(default)]
     pub hvdc_lines: Vec<HvdcLine>,
 }
 
@@ -63,14 +89,14 @@ pub struct VoltageLevel {
     pub bus_breaker_topology: Option<BusBreakerTopology>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TopologyKind {
     NodeBreaker,
     BusBreaker,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum EnergySource {
     Hydro,
@@ -145,7 +171,7 @@ pub struct Load {
     pub zip_model: Option<ZipLoadModel>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LoadType {
     Undefined,
@@ -181,7 +207,9 @@ pub struct ZipLoadModel {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BusBreakerTopology {
+    #[serde(default)]
     pub buses: Vec<Bus>,
+    #[serde(default)]
     pub switches: Vec<Switch>,
 }
 
@@ -350,7 +378,7 @@ pub enum RatioRegulationMode {
     ReactivePower,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component)]
 pub struct Line {
     pub id: String,
     pub r: f64,

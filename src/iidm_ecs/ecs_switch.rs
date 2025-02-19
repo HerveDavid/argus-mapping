@@ -1,20 +1,20 @@
-use bevy_ecs::{prelude::*, query};
+use bevy_ecs::prelude::*;
 
 use crate::iidm_json::Switch;
 
-use super::{find_physical_asset_by_id, PhysicalAssetRegistry};
+use super::PhysicalAssetRegistry;
 
 pub fn add_switch_component(commands: &mut Commands, entity: Entity, switch: Switch) {
     commands.entity(entity).insert(switch);
 }
 
-pub fn load_switchs_from_iidm(
+pub fn load_switchs(
     commands: &mut Commands,
-    registery: ResMut<PhysicalAssetRegistry>,
+    registery: Res<PhysicalAssetRegistry>,
     switchs: Vec<Switch>,
 ) {
     for switch in switchs {
-        find_physical_asset_by_id(&registery, &switch.id).map(|e| {
+        registery.find_physical_asset_by_id(&switch.id).map(|e| {
             add_switch_component(commands, e, switch);
         });
     }
