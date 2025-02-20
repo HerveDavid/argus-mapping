@@ -5,7 +5,7 @@ mod network;
 use crate::resources::Identifiable;
 use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
-use iidm_derive::Identifiable;
+use iidm_derive::{Identifiable, Updatable};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
@@ -380,7 +380,7 @@ pub enum RatioRegulationMode {
     ReactivePower,
 }
 
-#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct Line {
     pub id: String,
     pub r: f64,
