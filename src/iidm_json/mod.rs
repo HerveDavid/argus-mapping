@@ -2,11 +2,13 @@ mod line;
 mod loader;
 mod network;
 
+use crate::iidm_ecs::Identifiable;
+use argus_mapping_derive::Identifiable;
 use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct Network {
     pub version: String,
     pub id: String,
@@ -57,7 +59,7 @@ pub struct Network {
     pub hvdc_lines: Vec<HvdcLine>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct Substation {
     pub id: String,
     pub country: String,
@@ -70,7 +72,7 @@ pub struct Substation {
     pub two_windings_transformers: Vec<TwoWindingsTransformer>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct VoltageLevel {
     pub id: String,
     #[serde(rename = "nominalV")]
@@ -107,7 +109,7 @@ pub enum EnergySource {
     Other,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct Generator {
     pub id: String,
     #[serde(rename = "energySource")]
@@ -155,7 +157,7 @@ pub struct MinMaxReactiveLimits {
     pub max_q: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct Load {
     pub id: String,
     #[serde(rename = "loadType")]
@@ -232,12 +234,12 @@ pub struct InternalConnection {
     pub node2: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct Bus {
     pub id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct BusbarSection {
     pub id: String,
     pub name: String,
@@ -246,7 +248,7 @@ pub struct BusbarSection {
     pub connectable_bus: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct TwoWindingsTransformer {
     pub id: String,
     pub r: f64,
@@ -277,7 +279,7 @@ pub struct TwoWindingsTransformer {
     pub current_limits2: Option<CurrentLimits>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct ThreeWindingsTransformer {
     pub id: String,
     pub r1: f64,
@@ -378,7 +380,7 @@ pub enum RatioRegulationMode {
     ReactivePower,
 }
 
-#[derive(Debug, Serialize, Deserialize, Component)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct Line {
     pub id: String,
     pub r: f64,
@@ -403,7 +405,7 @@ pub struct Line {
     pub current_limits2: Option<CurrentLimits>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Component)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct Switch {
     pub id: String,
     pub kind: SwitchKind,
@@ -423,7 +425,7 @@ pub enum SwitchKind {
     LoadBreakSwitch,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct ShuntCompensator {
     pub id: String,
     #[serde(rename = "bPerSection")]
@@ -437,7 +439,7 @@ pub struct ShuntCompensator {
     pub connectable_bus: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct StaticVarCompensator {
     pub id: String,
     #[serde(rename = "bMin")]
@@ -463,7 +465,7 @@ pub enum StaticVarCompensatorRegulationMode {
     Off,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct DanglingLine {
     pub id: String,
     pub p0: f64,
@@ -477,7 +479,7 @@ pub struct DanglingLine {
     pub connectable_bus: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct TieLine {
     pub id: String,
     pub name: String,
@@ -489,7 +491,7 @@ pub struct TieLine {
     pub ucte_xnode_code: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct HvdcLine {
     pub id: String,
     pub name: String,
@@ -509,7 +511,7 @@ pub struct HvdcLine {
     pub converter_station2: HvdcConverterStation,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct HvdcConverterStation {
     pub id: String,
     pub name: String,
@@ -531,7 +533,7 @@ pub enum ConvertersMode {
     Side1InverterSide2Rectifier,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
 pub struct TerminalRef {
     pub id: String,
     pub side: Side,

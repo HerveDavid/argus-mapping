@@ -4,9 +4,9 @@ use bevy_ecs::prelude::*;
 use std::collections::HashMap;
 
 #[derive(Component, Debug)]
-pub struct Identifiable(pub String);
+pub struct Id(pub String);
 
-pub trait IdentifiableExt {
+pub trait Identifiable {
     fn id(&self) -> String;
 }
 
@@ -15,14 +15,14 @@ pub struct PhysicalAssetRegistry(pub HashMap<String, Entity>);
 
 impl PhysicalAssetRegistry {
     pub fn spawn_physical_asset(&mut self, commands: &mut Commands, id: String) -> Entity {
-        let entity = commands.spawn(Identifiable(id.clone())).id();
+        let entity = commands.spawn(Id(id.clone())).id();
         self.0.insert(id, entity);
         entity
     }
 
     pub fn spawn_component<C>(&mut self, commands: &mut Commands, component: C) -> Entity
     where
-        C: Component + IdentifiableExt,
+        C: Component + Identifiable,
     {
         let id = component.id();
         match self.0.get(&id) {
@@ -31,7 +31,7 @@ impl PhysicalAssetRegistry {
                 entity
             }
             None => {
-                let entity = commands.spawn((Identifiable(id.clone()), component)).id();
+                let entity = commands.spawn((Id(id.clone()), component)).id();
                 self.0.insert(id, entity);
                 entity
             }
@@ -61,7 +61,7 @@ mod tests {
 
             queue.apply(&mut world);
 
-            let identifiable = world.get::<Identifiable>(entity);
+            let identifiable = world.get::<Id>(entity);
             assert!(identifiable.is_some());
             assert_eq!(identifiable.unwrap().0, test_id);
 
@@ -117,7 +117,7 @@ mod tests {
         for (id, entity) in entities {
             assert_eq!(registry.find_physical_asset_by_id(&id), Some(entity));
 
-            let identifiable = world.get::<Identifiable>(entity);
+            let identifiable = world.get::<Id>(entity);
             assert!(identifiable.is_some());
             assert_eq!(identifiable.unwrap().0, id);
         }

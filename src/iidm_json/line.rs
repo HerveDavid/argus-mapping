@@ -1,7 +1,4 @@
-use crate::iidm_ecs::{IdentifiableExt, PhysicalAssetRegistry};
-
 use super::Line;
-use bevy_ecs::prelude::*;
 
 impl Line {
     pub fn from_json_str(json: &str) -> Result<Self, serde_json::Error> {
@@ -11,29 +8,18 @@ impl Line {
     pub fn to_json_string(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string_pretty(self)
     }
-
-    pub fn load_in_registery(
-        &self,
-        commands: &mut Commands,
-        registery: &mut PhysicalAssetRegistry,
-    ) {
-        registery.spawn_physical_asset(commands, self.id.clone());
-    }
-}
-
-impl IdentifiableExt for Line {
-    fn id(&self) -> String {
-        self.id.clone()
-    }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::iidm_ecs::Identifiable;
+    use crate::iidm_ecs::{Id, PhysicalAssetRegistry};
 
     use super::*;
-    use bevy_ecs::world::CommandQueue;
+    use bevy_ecs::{
+        system::Commands,
+        world::{CommandQueue, World},
+    };
 
     const LINE_STR: &str = r#"{
         "id" : "NHV1_NHV2_1",
@@ -55,10 +41,8 @@ mod tests {
     fn test_line_load_from_str() -> Result<(), Box<dyn std::error::Error>> {
         let line = Line::from_json_str(&LINE_STR)?;
 
-        // Test de l'identifiant
         assert_eq!(line.id, "NHV1_NHV2_1");
 
-        // Test des propriétés numériques
         assert_eq!(line.r, 3.0);
         assert_eq!(line.x, 33.0);
         assert_eq!(line.g1, 0.0);
@@ -66,7 +50,6 @@ mod tests {
         assert_eq!(line.g2, 0.0);
         assert_eq!(line.b2, 1.93E-4);
 
-        // Test des propriétés de connexion
         assert_eq!(line.voltage_level_id1, "VLHV1");
         assert_eq!(line.bus1, "NHV1");
         assert_eq!(line.connectable_bus1, "NHV1");
@@ -78,7 +61,7 @@ mod tests {
     }
 
     #[test]
-    fn test() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_spawn_component() -> Result<(), Box<dyn std::error::Error>> {
         let mut world = World::new();
         let mut queue = CommandQueue::default();
         let mut registry = PhysicalAssetRegistry::default();
@@ -91,7 +74,7 @@ mod tests {
 
             queue.apply(&mut world);
 
-            let identifiable = world.get::<Identifiable>(entity);
+            let identifiable = world.get::<Id>(entity);
             assert!(identifiable.is_some());
             assert_eq!(identifiable.unwrap().0, test_id);
 
