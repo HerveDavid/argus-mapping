@@ -1,6 +1,8 @@
 use bevy_ecs::prelude::*;
 use std::collections::HashMap;
 
+use crate::Identifiable;
+
 #[derive(Component, Debug)]
 pub struct Id(pub String);
 
