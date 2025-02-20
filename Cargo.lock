@@ -38,25 +38,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "argus-mapping"
-version = "0.1.0"
-dependencies = [
- "argus-mapping-derive",
- "bevy_ecs",
- "chrono",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "argus-mapping-derive"
-version = "0.1.0"
-dependencies = [
- "quote",
- "syn",
-]
-
-[[package]]
 name = "assert_type_match"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -454,6 +435,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f"
 dependencies = [
  "cc",
+]
+
+[[package]]
+name = "iidm"
+version = "0.1.0"
+dependencies = [
+ "bevy_ecs",
+ "chrono",
+ "iidm-derive",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "iidm-derive"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
 ]
 
 [[package]]

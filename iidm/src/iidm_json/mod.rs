@@ -3,9 +3,9 @@ mod loader;
 mod network;
 
 use crate::iidm_ecs::Identifiable;
-use argus_mapping_derive::Identifiable;
 use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
+use iidm_derive::Identifiable;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Component, Identifiable)]

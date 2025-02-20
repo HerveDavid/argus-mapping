@@ -1,4 +1,4 @@
-use argus_mapping::*;
+use iidm::*;
 
 const NETWORK_FILE: &str = "tests/data/network.json";
 
