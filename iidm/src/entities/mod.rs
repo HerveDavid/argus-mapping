@@ -1,7 +1,7 @@
 mod line;
 mod network;
 
-use crate::resources::Identifiable;
+use crate::extensions::Identifiable;
 use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
 use iidm_derive::{Identifiable, Updatable};

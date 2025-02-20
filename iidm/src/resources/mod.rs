@@ -4,10 +4,6 @@ use std::collections::HashMap;
 #[derive(Component, Debug)]
 pub struct Id(pub String);
 
-pub trait Identifiable {
-    fn id(&self) -> String;
-}
-
 #[derive(Resource, Default)]
 pub struct PhysicalAssetRegistry(pub HashMap<String, Entity>);
 
