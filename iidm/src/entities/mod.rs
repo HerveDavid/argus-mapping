@@ -2,7 +2,7 @@ mod line;
 mod loader;
 mod network;
 
-use crate::iidm_ecs::Identifiable;
+use crate::resources::Identifiable;
 use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
 use iidm_derive::Identifiable;

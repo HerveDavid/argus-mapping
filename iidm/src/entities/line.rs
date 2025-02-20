@@ -13,7 +13,7 @@ impl Line {
 #[cfg(test)]
 mod tests {
 
-    use crate::iidm_ecs::{Id, PhysicalAssetRegistry};
+    use crate::resources::{Id, PhysicalAssetRegistry};
 
     use super::*;
     use bevy_ecs::{

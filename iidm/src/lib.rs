@@ -1,5 +1,4 @@
-mod iidm_ecs;
-mod iidm_json;
+mod entities;
+mod resources;
 
-pub use iidm_json::*;
-// pub use metadata_grid::*;
+pub use entities::*;
