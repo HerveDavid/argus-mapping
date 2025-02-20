@@ -8,12 +8,31 @@ impl Line {
     pub fn to_json_string(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string_pretty(self)
     }
+
+    pub fn update(&mut self, update_json: &str) -> Result<(), serde_json::Error> {
+        let updates: serde_json::Value = serde_json::from_str(update_json)?;
+        let mut current_json = serde_json::to_value(&self)?;
+
+        if let (
+            serde_json::Value::Object(ref mut current_map),
+            serde_json::Value::Object(updates_map),
+        ) = (&mut current_json, updates)
+        {
+            for (key, value) in updates_map {
+                current_map.insert(key, value);
+            }
+            *self = serde_json::from_value(current_json)?;
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
 
     use crate::resources::{Id, PhysicalAssetRegistry};
+    use serde_json::json;
 
     use super::*;
     use bevy_ecs::{
@@ -154,4 +173,110 @@ mod tests {
 
         Ok(())
     }
+
+    fn create_default_line() -> Line {
+        Line {
+            id: "line1".to_string(),
+            r: 1.0,
+            x: 2.0,
+            g1: 3.0,
+            b1: 4.0,
+            g2: 5.0,
+            b2: 6.0,
+            voltage_level_id1: "vl1".to_string(),
+            bus1: "bus1".to_string(),
+            connectable_bus1: "cbus1".to_string(),
+            voltage_level_id2: "vl2".to_string(),
+            bus2: "bus2".to_string(),
+            connectable_bus2: "cbus2".to_string(),
+            current_limits1: None,
+            current_limits2: None,
+        }
+    }
+
+    #[test]
+    fn test_update_single_field() -> Result<(), serde_json::Error> {
+        let mut line = create_default_line();
+        let update = json!({
+            "r": 10.0
+        })
+        .to_string();
+
+        line.update(&update)?;
+        assert_eq!(line.r, 10.0);
+        assert_eq!(line.x, 2.0);
+        assert_eq!(line.id, "line1");
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_multiple_fields() -> Result<(), serde_json::Error> {
+        let mut line = create_default_line();
+        let update = json!({
+            "r": 10.0,
+            "x": 20.0,
+            "id": "newline"
+        })
+        .to_string();
+
+        line.update(&update)?;
+        assert_eq!(line.r, 10.0);
+        assert_eq!(line.x, 20.0);
+        assert_eq!(line.id, "newline");
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_with_renamed_fields() -> Result<(), serde_json::Error> {
+        let mut line = create_default_line();
+        let update = json!({
+            "voltageLevelId1": "newvl1",
+            "connectableBus1": "newcbus1"
+        })
+        .to_string();
+
+        line.update(&update)?;
+        assert_eq!(line.voltage_level_id1, "newvl1");
+        assert_eq!(line.connectable_bus1, "newcbus1");
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_optional_fields() -> Result<(), serde_json::Error> {
+        let mut line = create_default_line();
+        let current_limits = json!({
+            "permanentLimit": 100.0,
+            "temporaryLimits": []
+        });
+
+        let update = json!({
+            "currentLimits1": current_limits,
+            "currentLimits2": null
+        })
+        .to_string();
+
+        line.update(&update)?;
+        assert!(line.current_limits1.is_some());
+        assert!(line.current_limits2.is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_with_invalid_json() {
+        let mut line = create_default_line();
+        let result = line.update("invalid json");
+        assert!(result.is_err());
+    }
+
+    // #[test]
+    // fn test_update_with_empty_json() -> Result<(), serde_json::Error> {
+    //     let mut line = create_default_line();
+    //     let original = line.clone();
+
+    //     line.update("{}")?;
+    //     assert_eq!(line.id, original.id);
+    //     assert_eq!(line.r, original.r);
+    //     assert_eq!(line.x, original.x);
+    //     Ok(())
+    // }
 }
