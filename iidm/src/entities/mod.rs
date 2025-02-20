@@ -1,5 +1,4 @@
 mod line;
-mod loader;
 mod network;
 
 use crate::resources::Identifiable;
