@@ -38,7 +38,7 @@ mod tests {
         }
 
         pub fn assert_default_values(line: &Line) {
-            // Valeurs électriques
+            // Electrical values
             assert_eq!(line.id, "NHV1_NHV2_1");
             assert_eq!(line.r, 3.0);
             assert_eq!(line.x, 33.0);
@@ -47,17 +47,17 @@ mod tests {
             assert_eq!(line.g2, 0.0);
             assert_eq!(line.b2, 1.93E-4);
 
-            // Données de connexion côté 1
+            // Connectable data 1
             assert_eq!(line.voltage_level_id1, "VLHV1");
             assert_eq!(line.bus1, "NHV1");
             assert_eq!(line.connectable_bus1, "NHV1");
 
-            // Données de connexion côté 2
+            // Connectable data 2
             assert_eq!(line.voltage_level_id2, "VLHV2");
             assert_eq!(line.bus2, "NHV2");
             assert_eq!(line.connectable_bus2, "NHV2");
 
-            // Limites de courant (optionnelles)
+            // Optional current limits
             assert!(line.current_limits1.is_none());
             assert!(line.current_limits2.is_none());
         }
@@ -97,7 +97,6 @@ mod tests {
                 ..Default::default()
             });
             assert_eq!(line.r, 10.0);
-            // Vérification que les autres champs n'ont pas été modifiés
             assert_eq!(line.x, 33.0);
             assert_eq!(line.g1, 0.0);
             assert_eq!(line.b1, 1.93E-4);
@@ -117,7 +116,6 @@ mod tests {
             assert_eq!(line.x, 20.0);
             assert_eq!(line.g1, 1.0);
             assert_eq!(line.b1, 2.0);
-            // Vérification que les champs non mis à jour gardent leurs valeurs par défaut
             assert_eq!(line.g2, 0.0);
             assert_eq!(line.b2, 1.93E-4);
         }
@@ -134,12 +132,11 @@ mod tests {
             assert_eq!(line.voltage_level_id1, "NEW_VL1");
             assert_eq!(line.bus1, "NEW_BUS1");
             assert_eq!(line.connectable_bus1, "NEW_CBUS1");
-            // Vérification que les champs côté 2 n'ont pas été modifiés
             assert_eq!(line.voltage_level_id2, "VLHV2");
             assert_eq!(line.bus2, "NHV2");
         }
 
-        // #[test]
+        #[test]
         fn test_update_current_limits() {
             let mut line = create_default_line();
             let new_limits = CurrentLimits {
@@ -152,19 +149,12 @@ mod tests {
             };
 
             line.update(LineUpdate {
-                current_limits1: Some(Some(CurrentLimits {
-                    permanent_limit: 1.0,
-                    temporary_limits: vec![],
-                })),
-                current_limits2: Some(Some(CurrentLimits {
-                    permanent_limit: 1.0,
-                    temporary_limits: vec![],
-                })),
+                current_limits1: Some(Some(new_limits)),
                 ..Default::default()
             });
 
             assert!(line.current_limits1.is_some());
-            assert!(line.current_limits2.is_some());
+            assert!(line.current_limits2.is_none());
 
             let limits1 = line.current_limits1.as_ref().unwrap();
             assert_eq!(limits1.permanent_limit, 1000.0);
@@ -175,7 +165,7 @@ mod tests {
         #[test]
         fn test_update_remove_current_limits() {
             let mut line = create_default_line();
-            // D'abord ajouter des limites
+            // Add
             line.update(LineUpdate {
                 current_limits1: Some(Some(CurrentLimits {
                     permanent_limit: 1000.0,
@@ -184,7 +174,7 @@ mod tests {
                 ..Default::default()
             });
 
-            // Ensuite les supprimer
+            // And remove
             line.update(LineUpdate {
                 current_limits1: Some(None),
                 ..Default::default()
@@ -200,7 +190,6 @@ mod tests {
 
             line.update(LineUpdate::default());
 
-            // Vérifier que rien n'a changé
             assert_eq!(
                 serde_json::to_value(&line).unwrap(),
                 serde_json::to_value(&original).unwrap()
