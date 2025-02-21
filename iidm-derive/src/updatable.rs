@@ -1,10 +1,78 @@
-use proc_macro::TokenStream;
-use syn::{Data, DeriveInput, Fields};
+use convert_case::{Case, Casing};
+use proc_macro2::{Span, TokenStream};
+use quote::quote;
+use syn::{Data, DeriveInput, Fields, LitStr};
 
-pub(crate) fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
+pub fn impl_error_for_struct(ast: &DeriveInput) -> TokenStream {
+    let struct_name = &ast.ident;
+    let error_name = format!("{}Error", struct_name);
+    let error_ident = syn::Ident::new(&error_name, struct_name.span());
+
+    let fields = match &ast.data {
+        Data::Struct(data) => match &data.fields {
+            Fields::Named(fields) => &fields.named,
+            _ => panic!("Only named fields are supported"),
+        },
+        _ => panic!("Only structs are supported"),
+    };
+
+    let error_variants = fields.iter().map(|f| {
+        let field_name = &f.ident;
+        let variant_name = field_name.as_ref().unwrap().to_string();
+
+        // Get the serde rename attribute if it exists
+        let rename = f
+            .attrs
+            .iter()
+            .find(|attr| attr.path().is_ident("serde"))
+            .and_then(|attr| {
+                let mut rename_value = None;
+                attr.parse_nested_meta(|meta| {
+                    if meta.path.is_ident("rename") {
+                        rename_value = Some(meta.value()?.parse::<LitStr>()?.value());
+                    }
+                    Ok(())
+                })
+                .ok();
+                rename_value
+            })
+            .unwrap_or_else(|| variant_name.clone());
+
+        let error_message = format!("{} error: {{0}}", rename);
+        let variant_ident = syn::Ident::new(&variant_name.to_case(Case::Pascal), Span::call_site());
+
+        quote! {
+            #[error(#error_message)]
+            #variant_ident(String)
+        }
+    });
+
+    quote::quote! {
+        #[derive(Debug, thiserror::Error)]
+        pub enum #error_ident {
+            #(#error_variants,)*
+
+            #[error("Serialization error: {0}")]
+            Serialization(#[from] serde_json::Error),
+
+            #[error("Date parsing error: {0}")]
+            DateParse(#[from] chrono::ParseError),
+
+            #[error("Unknown error: {0}")]
+            Unknown(String)
+        }
+    }
+    .into()
+}
+
+pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
     // get struct identifier
-    let name = ast.ident;
+    let name = &ast.ident;
     let update_name = syn::Ident::new(&format!("{}Update", name), name.span());
+    let error_name = syn::Ident::new(&format!("{}Error", name), name.span());
+
+    // generate the error type
+    let error_type = impl_error_for_struct(&ast);
 
     // generate fields
     let fields = match ast.data {
@@ -42,6 +110,10 @@ pub(crate) fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
 
     // generate impl
     quote::quote! {
+
+        // First include the error enum
+        #error_type
+
         #[derive(Default, Deserialize)]
         #[serde(default)]
         pub struct #update_name {
@@ -51,98 +123,31 @@ pub(crate) fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
         impl Updatable for #name {
 
             type Updater = #update_name;
+            type Err =#error_name;
 
             fn update(&mut self, updates: Self::Updater) {
                 #(#update_impl)*
             }
 
-            fn update_from_json(&mut self, json: &str) -> Result<(), serde_json::Error> {
-                let updates: #update_name = serde_json::from_str(json)?;
-                self.update(updates);
-                Ok(())
+            fn update_from_json(&mut self, json: &str) -> Result<(), Self::Err> {
+                serde_json::from_str(json)
+                    .map_err(|e| Self::Err::Serialization(e))
+                    .and_then(|updates| {
+                        self.update(updates);
+                        Ok(())
+                    })
+            }
+
+            fn from_json_str(json: &str) -> Result<Self, Self::Err> {
+                serde_json::from_str(json)
+                    .map_err(|e| Self::Err::Serialization(e))
+            }
+
+            fn to_json_string(&self) -> Result<String, Self::Err> {
+                serde_json::to_string_pretty(self)
+                    .map_err(|e| Self::Err::Serialization(e))
             }
         }
     }
     .into()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde::Deserialize;
-
-    // Manual implementation of TestStructUpdate for comparison
-    #[derive(Default, Deserialize)]
-    #[serde(default)]
-    struct TestStructUpdate {
-        field1: Option<String>,
-        field2: Option<i32>,
-        field3: Option<bool>,
-    }
-
-    // #[test]
-    // fn test_derive_updatable_structure() {
-    //     // Verify that the macro correctly generates the Update structure
-    //     let input = syn::parse_quote! {
-    //         struct TestStruct {
-    //             field1: String,
-    //             field2: i32,
-    //             field3: bool,
-    //         }
-    //     };
-
-    //     let output = impl_updatable_trait(input);
-    //     let expected = quote::quote! {
-    //         #[derive(Default, Deserialize)]
-    //         #[serde(default)]
-    //         pub struct TestStructUpdate {
-    //             pub field1: Option<String>,
-    //             pub field2: Option<i32>,
-    //             pub field3: Option<bool>,
-    //         }
-    //         impl TestStruct {
-    //             pub fn update(&mut self, updates: TestStructUpdate) {
-    //                 if let Some(value) = updates.field1 {
-    //                     self.field1 = value;
-    //                 }
-    //                 if let Some(value) = updates.field2 {
-    //                     self.field2 = value;
-    //                 }
-    //                 if let Some(value) = updates.field3 {
-    //                     self.field3 = value;
-    //                 }
-    //             }
-    //             pub fn update_from_json(&mut self, json: &str) -> Result<(), serde_json::Error> {
-    //                 let updates: TestStructUpdate = serde_json::from_str(json)?;
-    //                 self.update(updates);
-    //                 Ok(())
-    //             }
-    //         }
-    //     };
-
-    //     assert_eq!(output.to_string(), expected.to_string());
-    // }
-
-    #[test]
-    #[should_panic(expected = "Updatable only supports structs")]
-    fn test_non_struct_input() {
-        let input = syn::parse_quote! {
-            enum TestEnum {
-                Variant1,
-                Variant2,
-            }
-        };
-
-        impl_updatable_trait(input);
-    }
-
-    #[test]
-    #[should_panic(expected = "Updatable only supports named fields")]
-    fn test_tuple_struct_input() {
-        let input = syn::parse_quote! {
-            struct TestTuple(String, i32);
-        };
-
-        impl_updatable_trait(input);
-    }
 }

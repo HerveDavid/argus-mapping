@@ -12,7 +12,7 @@ pub fn reflective_derive_macro(item: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(item).unwrap();
 
     // generate
-    impl_reflective_trait(ast)
+    impl_reflective_trait(ast).into()
 }
 
 #[proc_macro_derive(Updatable)]
@@ -21,5 +21,5 @@ pub fn derive_updatable(item: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(item).unwrap();
 
     // generate
-    impl_updatable_trait(ast)
+    impl_updatable_trait(ast).into()
 }

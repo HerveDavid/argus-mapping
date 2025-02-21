@@ -1,15 +1,10 @@
-mod line;
-mod network;
-
-use crate::extensions::Identifiable;
-use crate::extensions::Updatable;
+use crate::extensions::{Identifiable, Updatable};
 
 use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
-
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
+#[derive(Debug, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct Network {
     pub version: String,
     pub id: String,

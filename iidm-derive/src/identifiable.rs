@@ -1,4 +1,4 @@
-use proc_macro::TokenStream;
+use proc_macro2::TokenStream;
 use syn::DeriveInput;
 
 pub fn impl_reflective_trait(ast: DeriveInput) -> TokenStream {
