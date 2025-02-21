@@ -213,3 +213,235 @@ mod json_updates {
         assert_eq!(line.voltage_level_id1, "newvl1");
     }
 }
+
+#[cfg(test)]
+mod integration_tests {
+    use bevy_ecs::{
+        entity::Entity,
+        event::Events,
+        schedule::Schedule,
+        system::Commands,
+        world::{CommandQueue, World},
+    };
+    use iidm::{handle_update_events, AssetRegistry, Line, LineUpdate, UpdateEvent};
+
+    /// Tests the combination of registry and update system functionality
+    #[test]
+    fn test_register_and_update_line() {
+        // Setup
+        let mut world = World::new();
+        let mut schedule = Schedule::default();
+        world.init_resource::<Events<UpdateEvent<Line>>>();
+        schedule.add_systems(handle_update_events::<Line>);
+
+        let mut registry = AssetRegistry::default();
+
+        // Create initial line through registry
+        let initial_line = Line {
+            id: "test_line".to_string(),
+            r: 1.0,
+            x: 2.0,
+            g1: 3.0,
+            b1: 4.0,
+            g2: 5.0,
+            b2: 6.0,
+            voltage_level_id1: "vl1".to_string(),
+            bus1: "bus1".to_string(),
+            connectable_bus1: "bus1".to_string(),
+            voltage_level_id2: "vl2".to_string(),
+            bus2: "bus2".to_string(),
+            connectable_bus2: "bus2".to_string(),
+            current_limits1: None,
+            current_limits2: None,
+        };
+
+        let entity = {
+            let mut queue = CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, &world);
+            registry.add_component(&mut commands, "test_line", initial_line);
+            queue.apply(&mut world);
+            registry.find("test_line").unwrap()
+        };
+
+        // Create and send update event
+        let update_event = UpdateEvent {
+            entity,
+            updates: LineUpdate {
+                r: Some(10.0),
+                x: Some(20.0),
+                g1: Some(30.0),
+                b1: Some(40.0),
+                ..Default::default()
+            },
+        };
+
+        let mut event_writer = world.resource_mut::<Events<UpdateEvent<Line>>>();
+        event_writer.send(update_event);
+
+        // Run the system
+        schedule.run(&mut world);
+
+        // Verify the line was updated correctly
+        let line = world.entity(entity).get::<Line>().unwrap();
+        assert_eq!(line.r, 10.0);
+        assert_eq!(line.x, 20.0);
+        assert_eq!(line.g1, 30.0);
+        assert_eq!(line.b1, 40.0);
+    }
+
+    /// Tests updating multiple registered entities
+    #[test]
+    fn test_multiple_registered_entities_update() {
+        let mut world = World::new();
+        let mut schedule = Schedule::default();
+        world.init_resource::<Events<UpdateEvent<Line>>>();
+        schedule.add_systems(handle_update_events::<Line>);
+
+        let mut registry = AssetRegistry::default();
+
+        // Create multiple lines
+        let lines = vec![
+            (
+                "line1",
+                Line {
+                    id: "line1".to_string(),
+                    r: 1.0,
+                    x: 2.0,
+                    g1: 3.0,
+                    b1: 4.0,
+                    g2: 5.0,
+                    b2: 6.0,
+                    voltage_level_id1: "vl1".to_string(),
+                    bus1: "bus1".to_string(),
+                    connectable_bus1: "bus1".to_string(),
+                    voltage_level_id2: "vl2".to_string(),
+                    bus2: "bus2".to_string(),
+                    connectable_bus2: "bus2".to_string(),
+                    current_limits1: None,
+                    current_limits2: None,
+                },
+            ),
+            (
+                "line2",
+                Line {
+                    id: "line2".to_string(),
+                    r: 2.0,
+                    x: 3.0,
+                    g1: 4.0,
+                    b1: 5.0,
+                    g2: 6.0,
+                    b2: 7.0,
+                    voltage_level_id1: "vl3".to_string(),
+                    bus1: "bus3".to_string(),
+                    connectable_bus1: "bus3".to_string(),
+                    voltage_level_id2: "vl4".to_string(),
+                    bus2: "bus4".to_string(),
+                    connectable_bus2: "bus4".to_string(),
+                    current_limits1: None,
+                    current_limits2: None,
+                },
+            ),
+        ];
+
+        // Register all lines
+        let entities: Vec<(String, Entity)> = {
+            let mut queue = CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, &world);
+
+            let entities = lines
+                .iter()
+                .map(|(id, line)| {
+                    registry.add_component(&mut commands, id.to_string(), line.clone());
+                    (id.to_string(), registry.find(*id).unwrap())
+                })
+                .collect();
+
+            queue.apply(&mut world);
+            entities
+        };
+
+        // Update each line
+        let mut event_writer = world.resource_mut::<Events<UpdateEvent<Line>>>();
+        for (_, entity) in &entities {
+            event_writer.send(UpdateEvent {
+                entity: *entity,
+                updates: LineUpdate {
+                    r: Some(100.0),
+                    x: Some(200.0),
+                    ..Default::default()
+                },
+            });
+        }
+
+        schedule.run(&mut world);
+
+        // Verify updates
+        for (id, entity) in entities {
+            let line = world.entity(entity).get::<Line>().unwrap();
+            assert_eq!(line.r, 100.0, "Line {} not updated correctly", id);
+            assert_eq!(line.x, 200.0, "Line {} not updated correctly", id);
+        }
+    }
+
+    /// Tests updating a registered entity that has been removed
+    #[test]
+    fn test_update_removed_registered_entity() {
+        let mut world = World::new();
+        let mut schedule = Schedule::default();
+        world.init_resource::<Events<UpdateEvent<Line>>>();
+        schedule.add_systems(handle_update_events::<Line>);
+
+        let mut registry = AssetRegistry::default();
+
+        // Create and register a line
+        let line = Line {
+            id: "test_line".to_string(),
+            r: 1.0,
+            x: 2.0,
+            g1: 3.0,
+            b1: 4.0,
+            g2: 5.0,
+            b2: 6.0,
+            voltage_level_id1: "vl1".to_string(),
+            bus1: "bus1".to_string(),
+            connectable_bus1: "bus1".to_string(),
+            voltage_level_id2: "vl2".to_string(),
+            bus2: "bus2".to_string(),
+            connectable_bus2: "bus2".to_string(),
+            current_limits1: None,
+            current_limits2: None,
+        };
+
+        let entity = {
+            let mut queue = CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, &world);
+            registry.add_component(&mut commands, "test_line", line);
+            queue.apply(&mut world);
+            registry.find("test_line").unwrap()
+        };
+
+        // Remove the entity
+        {
+            let mut queue = CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, &world);
+            commands.entity(entity).despawn();
+            queue.apply(&mut world);
+        }
+
+        // Try to update the removed entity
+        let mut event_writer = world.resource_mut::<Events<UpdateEvent<Line>>>();
+        event_writer.send(UpdateEvent {
+            entity,
+            updates: LineUpdate {
+                r: Some(10.0),
+                ..Default::default()
+            },
+        });
+
+        // System should handle this gracefully
+        schedule.run(&mut world);
+
+        // Verify the entity no longer exists
+        assert!(!world.entities().contains(entity));
+    }
+}

@@ -3,16 +3,16 @@ use bevy_ecs::prelude::*;
 use crate::Updatable;
 
 #[derive(Event)]
-struct UpdateEvent<T: Updatable>
+pub struct UpdateEvent<T: Updatable>
 where
     T: 'static,
     T::Event: Send + Sync,
 {
-    entity: Entity,
-    updates: T::Event,
+    pub entity: Entity,
+    pub updates: T::Event,
 }
 
-fn handle_update_events<T: Component + Updatable>(
+pub fn handle_update_events<T: Component + Updatable>(
     mut update_events: EventReader<UpdateEvent<T>>,
     mut query: Query<&mut T>,
 ) where
