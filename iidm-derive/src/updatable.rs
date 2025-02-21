@@ -114,7 +114,7 @@ pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
         // First include the error enum
         #error_type
 
-        #[derive(Default, Deserialize)]
+        #[derive(Default, serde::Serialize, serde::Deserialize, Clone)]
         #[serde(default)]
         pub struct #update_name {
             #(#field_defs,)*
@@ -122,10 +122,10 @@ pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
 
         impl Updatable for #name {
 
-            type Updater = #update_name;
+            type Event = #update_name;
             type Err =#error_name;
 
-            fn update(&mut self, updates: Self::Updater) {
+            fn update(&mut self, updates: Self::Event) {
                 #(#update_impl)*
             }
 
@@ -138,15 +138,6 @@ pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
                     })
             }
 
-            // fn from_json_str(json: &str) -> Result<Self, Self::Err> {
-            //     serde_json::from_str(json)
-            //         .map_err(|e| Self::Err::Serialization(e))
-            // }
-
-            // fn to_json_string(&self) -> Result<String, Self::Err> {
-            //     serde_json::to_string_pretty(self)
-            //         .map_err(|e| Self::Err::Serialization(e))
-            // }
         }
     }
     .into()
