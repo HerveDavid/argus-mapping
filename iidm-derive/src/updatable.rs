@@ -138,15 +138,15 @@ pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
                     })
             }
 
-            fn from_json_str(json: &str) -> Result<Self, Self::Err> {
-                serde_json::from_str(json)
-                    .map_err(|e| Self::Err::Serialization(e))
-            }
+            // fn from_json_str(json: &str) -> Result<Self, Self::Err> {
+            //     serde_json::from_str(json)
+            //         .map_err(|e| Self::Err::Serialization(e))
+            // }
 
-            fn to_json_string(&self) -> Result<String, Self::Err> {
-                serde_json::to_string_pretty(self)
-                    .map_err(|e| Self::Err::Serialization(e))
-            }
+            // fn to_json_string(&self) -> Result<String, Self::Err> {
+            //     serde_json::to_string_pretty(self)
+            //         .map_err(|e| Self::Err::Serialization(e))
+            // }
         }
     }
     .into()

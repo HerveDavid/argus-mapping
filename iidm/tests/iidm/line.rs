@@ -21,7 +21,7 @@ mod test_data {
         }"#;
 
     pub fn create_default_line() -> Line {
-        Line::from_json_str(VALID_LINE_JSON).unwrap()
+        serde_json::from_str(VALID_LINE_JSON).unwrap()
     }
 
     pub fn assert_default_values(line: &Line) {
@@ -56,14 +56,14 @@ mod serialization {
 
     #[test]
     fn test_deserialize_from_json() {
-        let line = Line::from_json_str(VALID_LINE_JSON).unwrap();
+        let line: Line = serde_json::from_str(VALID_LINE_JSON).unwrap();
         assert_default_values(&line);
     }
 
     #[test]
     fn test_serialize_to_json() {
         let line = create_default_line();
-        let json = line.to_json_string().unwrap();
+        let json = serde_json::to_string(&line).unwrap();
         let deserialized: Line = serde_json::from_str(&json).unwrap();
         assert_default_values(&deserialized);
     }

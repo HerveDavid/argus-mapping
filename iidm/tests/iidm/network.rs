@@ -5,7 +5,7 @@ const NETWORK_FILE: &str = "tests/data/network.json";
 #[test]
 fn test_network_basic_properties() -> Result<(), Box<dyn std::error::Error>> {
     let test_network = std::fs::read_to_string(NETWORK_FILE)?;
-    let network = Network::from_json_str(&test_network)?;
+    let network: Network = serde_json::from_str(&test_network)?;
 
     assert_eq!(network.version, "1.12");
     assert_eq!(network.id, "sim1");
@@ -19,7 +19,7 @@ fn test_network_basic_properties() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_network_substations() -> Result<(), Box<dyn std::error::Error>> {
     let test_network = std::fs::read_to_string(NETWORK_FILE)?;
-    let network = Network::from_json_str(&test_network)?;
+    let network: Network = serde_json::from_str(&test_network)?;
 
     assert_eq!(network.substations.len(), 2);
 
@@ -52,7 +52,7 @@ fn test_network_substations() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_network_lines() -> Result<(), Box<dyn std::error::Error>> {
     let test_network = std::fs::read_to_string("tests/data/network.json")?;
-    let network = Network::from_json_str(&test_network)?;
+    let network: Network = serde_json::from_str(&test_network)?;
 
     assert_eq!(network.lines.len(), 2);
 
@@ -69,7 +69,7 @@ fn test_network_lines() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_network_transformers() -> Result<(), Box<dyn std::error::Error>> {
     let test_network = std::fs::read_to_string("tests/data/network.json")?;
-    let network = Network::from_json_str(&test_network)?;
+    let network: Network = serde_json::from_str(&test_network)?;
 
     let p1 = &network.substations[0];
     assert_eq!(p1.two_windings_transformers.len(), 1);
@@ -93,7 +93,7 @@ fn test_network_transformers() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_network_loads() -> Result<(), Box<dyn std::error::Error>> {
     let test_network = std::fs::read_to_string("tests/data/network.json")?;
-    let network = Network::from_json_str(&test_network)?;
+    let network: Network = serde_json::from_str(&test_network)?;
 
     let p2 = &network.substations[1];
     let vlload = &p2.voltage_levels[1];
@@ -112,9 +112,9 @@ fn test_network_loads() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_serialization_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
     let test_network = std::fs::read_to_string("tests/data/network.json")?;
-    let network = Network::from_json_str(&test_network)?;
-    let serialized = network.to_json_string()?;
-    let deserialized = Network::from_json_str(&serialized)?;
+    let network: Network = serde_json::from_str(&test_network)?;
+    let serialized = serde_json::to_string(&network)?;
+    let deserialized: Network = serde_json::from_str(&serialized)?;
 
     assert_eq!(network.id, deserialized.id);
     assert_eq!(network.version, deserialized.version);
