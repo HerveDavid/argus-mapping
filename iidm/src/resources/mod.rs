@@ -10,32 +10,56 @@ pub struct Id(pub String);
 pub struct PhysicalAssetRegistry(pub HashMap<String, Entity>);
 
 impl PhysicalAssetRegistry {
-    pub fn spawn_physical_asset(&mut self, commands: &mut Commands, id: String) -> Entity {
+    pub fn spawn_physical_asset<S>(&mut self, commands: &mut Commands, id: S) -> Entity where S: Into<String> {
+        let id = id.into();
         let entity = commands.spawn(Id(id.clone())).id();
         self.0.insert(id, entity);
         entity
     }
 
-    pub fn spawn_component<C>(&mut self, commands: &mut Commands, component: C) -> Entity
+    pub fn spawn_identifiable<C>(&mut self, commands: &mut Commands, component: C) -> Entity
     where
         C: Component + Identifiable,
     {
         let id = component.id();
-        match self.0.get(&id) {
-            Some(&entity) => {
+        match self.find_physical_asset_by_id(&id) {
+            Some(entity) => {
                 commands.entity(entity).insert(component);
                 entity
             }
             None => {
-                let entity = commands.spawn((Id(id.clone()), component)).id();
-                self.0.insert(id, entity);
-                entity
+                 self.spawn_physical_asset(commands, id)
             }
         }
     }
 
-    pub fn find_physical_asset_by_id(&self, id: &str) -> Option<Entity> {
-        self.0.get(id).copied()
+    pub fn insert_component<C, S>(
+        &mut self,
+        commands: &mut Commands,
+        id: S,
+        component: C,
+    ) 
+    where
+        C: Component,
+        S: Into<String>,
+    {
+        let id: String = id.into();
+        match self.find_physical_asset_by_id(id.clone()) {
+            Some(entity)=> {
+                commands.entity(entity).insert(component);
+            }
+            None => {
+                let entity =  self.spawn_physical_asset(commands, id);
+                commands.entity(entity).insert(component);
+            }
+        }
+    }
+
+    pub fn find_physical_asset_by_id<S>(&self, id: S) -> Option<Entity>
+    where
+        S: Into<String>,
+    {
+        self.0.get(&id.into()).copied()
     }
 }
 
