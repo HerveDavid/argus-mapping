@@ -1,3 +1,5 @@
+pub use iidm_derive::{Identifiable, Updatable};
+
 pub trait Identifiable {
     fn id(&self) -> String;
 }

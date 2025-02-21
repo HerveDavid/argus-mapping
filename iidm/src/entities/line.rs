@@ -13,6 +13,7 @@ impl Line {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::extensions::Updatable;
 
     mod test_data {
         use super::*;

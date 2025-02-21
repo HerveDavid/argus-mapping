@@ -48,12 +48,15 @@ pub(crate) fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
             #(#field_defs,)*
         }
 
-        impl #name {
-            pub fn update(&mut self, updates: #update_name) {
+        impl Updatable for #name {
+
+            type Updater = #update_name;
+
+            fn update(&mut self, updates: Self::Updater) {
                 #(#update_impl)*
             }
 
-            pub fn update_from_json(&mut self, json: &str) -> Result<(), serde_json::Error> {
+            fn update_from_json(&mut self, json: &str) -> Result<(), serde_json::Error> {
                 let updates: #update_name = serde_json::from_str(json)?;
                 self.update(updates);
                 Ok(())

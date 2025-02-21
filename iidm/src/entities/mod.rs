@@ -2,9 +2,11 @@ mod line;
 mod network;
 
 use crate::extensions::Identifiable;
+use crate::extensions::Updatable;
+
 use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
-use iidm_derive::{Identifiable, Updatable};
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Component, Identifiable)]
