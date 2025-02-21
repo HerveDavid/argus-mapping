@@ -1,147 +1,158 @@
 use bevy_ecs::prelude::*;
 use std::collections::HashMap;
 
-use crate::Identifiable;
+/// Unique identifier component for an entity
+#[derive(Component, Debug, Clone)]
+pub struct Id(String);
 
-#[derive(Component, Debug)]
-pub struct Id(pub String);
+impl Id {
+    pub fn new<S: Into<String>>(id: S) -> Self {
+        Self(id.into())
+    }
 
+    pub fn value(&self) -> &str {
+        &self.0
+    }
+}
+
+/// Registry for managing entities with unique identifiers
 #[derive(Resource, Default)]
-pub struct PhysicalAssetRegistry(pub HashMap<String, Entity>);
+pub struct AssetRegistry {
+    entities: HashMap<String, Entity>,
+}
 
-impl PhysicalAssetRegistry {
-    pub fn spawn_physical_asset<S>(&mut self, commands: &mut Commands, id: S) -> Entity where S: Into<String> {
+impl AssetRegistry {
+    /// Creates a new entity with an ID and registers it
+    pub fn register<S: Into<String>>(&mut self, commands: &mut Commands, id: S) -> Entity {
         let id = id.into();
-        let entity = commands.spawn(Id(id.clone())).id();
-        self.0.insert(id, entity);
+        let entity = commands.spawn(Id::new(id.clone())).id();
+        self.entities.insert(id, entity);
         entity
     }
 
-    pub fn spawn_identifiable<C>(&mut self, commands: &mut Commands, component: C) -> Entity
-    where
-        C: Component + Identifiable,
-    {
-        let id = component.id();
-        match self.find_physical_asset_by_id(&id) {
-            Some(entity) => {
-                commands.entity(entity).insert(component);
-                entity
-            }
-            None => {
-                 self.spawn_physical_asset(commands, id)
-            }
-        }
+    /// Finds an entity by its ID
+    pub fn find<S: Into<String>>(&self, id: S) -> Option<Entity> {
+        self.entities.get(&id.into()).copied()
     }
 
-    pub fn insert_component<C, S>(
-        &mut self,
-        commands: &mut Commands,
-        id: S,
-        component: C,
-    ) 
+    /// Adds or updates a component on an entity, creating the entity if it doesn't exist
+    pub fn add_component<S, C>(&mut self, commands: &mut Commands, id: S, component: C)
     where
+        S: Into<String>,
         C: Component,
-        S: Into<String>,
     {
-        let id: String = id.into();
-        match self.find_physical_asset_by_id(id.clone()) {
-            Some(entity)=> {
-                commands.entity(entity).insert(component);
-            }
-            None => {
-                let entity =  self.spawn_physical_asset(commands, id);
-                commands.entity(entity).insert(component);
-            }
-        }
-    }
+        let id = id.into();
+        let entity = self
+            .find(&id)
+            .unwrap_or_else(|| self.register(commands, id));
 
-    pub fn find_physical_asset_by_id<S>(&self, id: S) -> Option<Entity>
-    where
-        S: Into<String>,
-    {
-        self.0.get(&id.into()).copied()
+        commands.entity(entity).insert(component);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bevy_ecs::world::CommandQueue;
+    use bevy_ecs::world::{CommandQueue, World};
 
     #[test]
-    fn test_spawn_physical_asset() {
-        let mut world = World::new();
-        let mut queue = CommandQueue::default();
-        let mut registry = PhysicalAssetRegistry::default();
+    fn test_id_creation() {
+        let id = Id::new("test_entity");
+        assert_eq!(id.value(), "test_entity");
+    }
 
-        let test_id = "test_asset_1".to_string();
+    #[test]
+    fn test_register_new_entity() {
+        let mut world = World::new();
+        let mut registry = AssetRegistry {
+            entities: HashMap::new(),
+        };
+
         {
-            let mut commands = Commands::new(&mut queue, &world);
-            let entity = registry.spawn_physical_asset(&mut commands, test_id.clone());
-
+            let mut queue = CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, &mut world);
+            registry.register(&mut commands, "test_entity");
             queue.apply(&mut world);
-
-            let identifiable = world.get::<Id>(entity);
-            assert!(identifiable.is_some());
-            assert_eq!(identifiable.unwrap().0, test_id);
-
-            assert!(registry.0.contains_key(&test_id));
-            assert_eq!(registry.0.get(&test_id), Some(&entity));
         }
+
+        assert!(registry.entities.contains_key("test_entity"));
     }
 
     #[test]
-    fn test_find_physical_asset_by_id() {
+    fn test_find_entity() {
         let mut world = World::new();
-        let mut queue = CommandQueue::default();
-        let mut registry = PhysicalAssetRegistry::default();
-
-        // Créer plusieurs entités
-        let id1 = "asset_1".to_string();
-        let id2 = "asset_2".to_string();
-
-        let (entity1, entity2) = {
-            let mut commands = Commands::new(&mut queue, &world);
-            let e1 = registry.spawn_physical_asset(&mut commands, id1.clone());
-            let e2 = registry.spawn_physical_asset(&mut commands, id2.clone());
-            (e1, e2)
+        let mut registry = AssetRegistry {
+            entities: HashMap::new(),
         };
 
-        queue.apply(&mut world);
+        {
+            let mut queue = CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, &mut world);
+            registry.register(&mut commands, "test_entity");
+            queue.apply(&mut world);
+        }
 
-        assert_eq!(registry.find_physical_asset_by_id(&id1), Some(entity1));
-        assert_eq!(registry.find_physical_asset_by_id(&id2), Some(entity2));
-
-        assert_eq!(registry.find_physical_asset_by_id("non_existent"), None);
+        let found = registry.find("test_entity");
+        assert!(found.is_some());
     }
 
     #[test]
-    fn test_multiple_assets_registration() {
-        let mut world = World::new();
-        let mut queue = CommandQueue::default();
-        let mut registry = PhysicalAssetRegistry::default();
+    fn test_find_nonexistent_entity() {
+        let registry = AssetRegistry {
+            entities: HashMap::new(),
+        };
+        let found = registry.find("nonexistent");
+        assert!(found.is_none());
+    }
 
-        let entities: Vec<(String, Entity)> = {
-            let mut commands = Commands::new(&mut queue, &world);
-            (0..5)
-                .map(|i| {
-                    let id = format!("asset_{}", i);
-                    let entity = registry.spawn_physical_asset(&mut commands, id.clone());
-                    (id, entity)
-                })
-                .collect()
+    #[test]
+    fn test_add_component() {
+        let mut world = World::new();
+        let mut registry = AssetRegistry {
+            entities: HashMap::new(),
         };
 
-        queue.apply(&mut world);
+        #[derive(Component, Debug)]
+        struct TestComponent(i32);
 
-        for (id, entity) in entities {
-            assert_eq!(registry.find_physical_asset_by_id(&id), Some(entity));
-
-            let identifiable = world.get::<Id>(entity);
-            assert!(identifiable.is_some());
-            assert_eq!(identifiable.unwrap().0, id);
+        {
+            let mut queue = CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, &mut world);
+            registry.add_component(&mut commands, "test_entity", TestComponent(42));
+            queue.apply(&mut world);
         }
 
-        assert_eq!(registry.0.len(), 5);
+        let entity = registry.find("test_entity").unwrap();
+        assert!(world.entity(entity).contains::<TestComponent>());
+    }
+
+    #[test]
+    fn test_add_component_to_existing_entity() {
+        let mut world = World::new();
+        let mut registry = AssetRegistry {
+            entities: HashMap::new(),
+        };
+
+        let entity = {
+            let mut queue = CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, &mut world);
+            let entity = registry.register(&mut commands, "test_entity");
+            queue.apply(&mut world);
+            entity
+        };
+
+        #[derive(Component, Debug)]
+        struct TestComponent(i32);
+
+        {
+            let mut queue = CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, &mut world);
+            registry.add_component(&mut commands, "test_entity", TestComponent(42));
+            queue.apply(&mut world);
+        }
+
+        let found = registry.find("test_entity").unwrap();
+        assert_eq!(entity, found);
+        assert!(world.entity(entity).contains::<TestComponent>());
     }
 }
