@@ -1,58 +1,89 @@
-use std::sync::Arc;
-
+use crate::states::AppState;
 use askama::Template;
-use axum::extract::{Multipart, State};
-use axum::response::Html;
+use axum::{
+    extract::{Multipart, State},
+    http::StatusCode,
+    response::{Html, IntoResponse, Response},
+};
 use bevy_ecs::event::Events;
 use iidm::{Identifiable, Network, RegisterEvent};
+use std::sync::Arc;
+use thiserror::Error;
 
-use crate::states::AppState;
+#[derive(Error, Debug)]
+pub enum UploadError {
+    #[error("Multipart field error: {0}")]
+    MultipartError(#[from] axum::extract::multipart::MultipartError),
+    #[error("JSON parsing error: {0}")]
+    JsonError(#[from] serde_json::Error),
+    #[error("Template rendering error: {0}")]
+    TemplateError(#[from] askama::Error),
+    #[error("No IIDM file provided")]
+    NoFile,
+}
+
+// Implement IntoResponse for our error type
+impl IntoResponse for UploadError {
+    fn into_response(self) -> Response {
+        let message = self.to_string();
+        (StatusCode::BAD_REQUEST, message).into_response()
+    }
+}
 
 #[derive(Template)]
 #[template(path = "iidm_table.html")]
 struct IIdmTableTemplate {
-    iidm_table: String,
+    message: String,
     network: Option<Network>,
+}
+
+impl IIdmTableTemplate {
+    fn new(message: String, network: Option<Network>) -> Self {
+        Self { message, network }
+    }
 }
 
 pub async fn upload_iidm(
     State(state): State<Arc<AppState>>,
     mut multipart: Multipart,
-) -> Html<String> {
-    let mut iidm_table = String::from("Aucun fichier reçu");
+) -> Result<impl IntoResponse, UploadError> {
+    let network = process_upload(&mut multipart).await?;
 
-    while let Some(field) = multipart.next_field().await.unwrap() {
+    // Update ECS state
+    update_ecs_state(&state, &network).await;
+
+    let iidm_table = serde_json::to_string_pretty(&network).map_err(UploadError::JsonError)?;
+
+    let template = IIdmTableTemplate::new(iidm_table, Some(network));
+    let html = template.render().map_err(UploadError::TemplateError)?;
+
+    Ok(Html(html))
+}
+
+async fn process_upload(multipart: &mut Multipart) -> Result<Network, UploadError> {
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(UploadError::MultipartError)?
+    {
         if field.name() == Some("iidm_file") {
-            if let Ok(bytes) = field.bytes().await {
-                if let Ok(network) = serde_json::from_slice::<Network>(&bytes) {
-                    iidm_table =
-                        serde_json::to_string_pretty(&network).unwrap_or_else(|e| e.to_string());
-
-                    // Load ecs mutables
-                    let ecs = state.ecs.read().await;
-                    let mut world = ecs.world.write().await;
-                    let mut schedule = ecs.schedule.write().await;
-
-                    // Get event writer
-                    let mut event_writer = world.resource_mut::<Events<RegisterEvent<Network>>>();
-                    event_writer.send(RegisterEvent {
-                        id: network.id(),
-                        component: network,
-                    });
-
-                    // Apply state changed
-                    schedule.run(&mut world);
-                } else {
-                    iidm_table = "Invalid JSON file".to_string();
-                }
-            }
+            let bytes = field.bytes().await.map_err(UploadError::MultipartError)?;
+            return serde_json::from_slice(&bytes).map_err(UploadError::JsonError);
         }
     }
+    Err(UploadError::NoFile)
+}
 
-    let network: Option<Network> = serde_json::from_str(&iidm_table).ok();
-    let template = IIdmTableTemplate {
-        iidm_table: iidm_table.clone(),
-        network,
-    };
-    Html(template.render().unwrap())
+async fn update_ecs_state(state: &Arc<AppState>, network: &Network) {
+    let ecs = state.ecs.read().await;
+    let mut world = ecs.world.write().await;
+    let mut schedule = ecs.schedule.write().await;
+
+    let mut event_writer = world.resource_mut::<Events<RegisterEvent<Network>>>();
+    event_writer.send(RegisterEvent {
+        id: network.id(),
+        component: network.clone(),
+    });
+
+    schedule.run(&mut world);
 }
