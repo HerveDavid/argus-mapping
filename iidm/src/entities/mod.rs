@@ -4,7 +4,7 @@ use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct Network {
     pub version: String,
     pub id: String,
