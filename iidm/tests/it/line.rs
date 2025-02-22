@@ -98,7 +98,7 @@ fn test_multiple_line_updates() {
     schedule.add_systems(handle_update_events::<Line>);
 
     // Add line
-    let line = Line {
+    let component = Line {
         id: "line1".to_string(),
         r: 1.0,
         x: 2.0,
@@ -120,7 +120,7 @@ fn test_multiple_line_updates() {
     let mut event_writer = world.resource_mut::<Events<RegisterEvent<Line>>>();
     event_writer.send(RegisterEvent {
         id: "line1".to_string(),
-        component: line,
+        component,
     });
 
     // Run the schedule world to apply change

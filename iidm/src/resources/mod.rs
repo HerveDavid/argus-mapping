@@ -113,12 +113,12 @@ mod tests {
         };
 
         #[derive(Component, Debug)]
-        struct TestComponent(i32);
+        struct TestComponent;
 
         {
             let mut queue = CommandQueue::default();
             let mut commands = Commands::new(&mut queue, &mut world);
-            registry.add_component(&mut commands, "test_entity", TestComponent(42));
+            registry.add_component(&mut commands, "test_entity", TestComponent);
             queue.apply(&mut world);
         }
 
@@ -142,12 +142,12 @@ mod tests {
         };
 
         #[derive(Component, Debug)]
-        struct TestComponent(i32);
+        struct TestComponent;
 
         {
             let mut queue = CommandQueue::default();
             let mut commands = Commands::new(&mut queue, &mut world);
-            registry.add_component(&mut commands, "test_entity", TestComponent(42));
+            registry.add_component(&mut commands, "test_entity", TestComponent);
             queue.apply(&mut world);
         }
 
