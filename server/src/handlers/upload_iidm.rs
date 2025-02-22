@@ -6,7 +6,7 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 use bevy_ecs::event::Events;
-use iidm::{Identifiable, Network, RegisterEvent};
+use iidm::{Identifiable, Network, NetworkError, RegisterEvent};
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -15,7 +15,7 @@ pub enum UploadError {
     #[error("Multipart field error: {0}")]
     MultipartError(#[from] axum::extract::multipart::MultipartError),
     #[error("JSON parsing error: {0}")]
-    JsonError(#[from] serde_json::Error),
+    JsonError(#[from] NetworkError),
     #[error("Template rendering error: {0}")]
     TemplateError(#[from] askama::Error),
     #[error("No IIDM file provided")]
@@ -52,7 +52,8 @@ pub async fn upload_iidm(
     // Update ECS state
     update_ecs_state(&state, &network).await;
 
-    let iidm_table = serde_json::to_string_pretty(&network).map_err(UploadError::JsonError)?;
+    let iidm_table =
+        serde_json::to_string_pretty(&network).map_err(|e| NetworkError::Serialization(e))?;
 
     let template = IIdmTableTemplate::new(iidm_table, Some(network));
     let html = template.render().map_err(UploadError::TemplateError)?;
@@ -68,7 +69,9 @@ async fn process_upload(multipart: &mut Multipart) -> Result<Network, UploadErro
     {
         if field.name() == Some("iidm_file") {
             let bytes = field.bytes().await.map_err(UploadError::MultipartError)?;
-            return serde_json::from_slice(&bytes).map_err(UploadError::JsonError);
+            return serde_json::from_slice(&bytes)
+                .map_err(|e| NetworkError::Serialization(e))
+                .map_err(UploadError::JsonError);
         }
     }
     Err(UploadError::NoFile)
