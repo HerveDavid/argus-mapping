@@ -59,7 +59,6 @@ pub async fn upload_iidm(
             Ok(Html(html))
         }
         Err(err) => {
-            // Cas d'erreur
             let error_message = err.to_string();
             let template = IIdmTableTemplate::new(error_message, None);
             let html = template.render().map_err(UploadError::TemplateError)?;
