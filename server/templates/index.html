@@ -6,7 +6,19 @@
     <script src="/static/js/htmx.min.js"></script>
 </head>
 <body>
-    <h1>{{ title }}</h1>
-    {% include "counter.html" %}
+  <div id="iidm-upload">
+        <h2>Upload IIDM</h2>
+        <form hx-post="/upload"
+              hx-target="#iidm-table"
+              method="POST"
+              hx-encoding="multipart/form-data">
+            <input type="file" 
+                   name="iidm_file" 
+                   accept=".json"
+                   required>
+            <button type="submit">Send</button>
+        </form>
+        <div id="iidm-table"></div>
+    </div>
 </body>
 </html>
