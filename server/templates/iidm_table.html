@@ -1,78 +1,101 @@
-<div id="iidm-table">
-    <h3>Résultat:</h3>
+<div id="iidm-table" class="max-w-7xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+    <h3 class="text-2xl font-bold text-gray-800 mb-6">Résultat:</h3>
     {% if let Some(network) = network %}
-        <div class="network-info">
-            <h4>Informations Réseau</h4>
-            <table border="1">
-                <tr>
-                    <th>ID</th>
-                    <th>Version</th>
-                    <th>Date</th>
-                    <th>Format Source</th>
-                </tr>
-                <tr>
-                    <td>{{ network.id }}</td>
-                    <td>{{ network.version }}</td>
-                    <td>{{ network.case_date }}</td>
-                    <td>{{ network.source_format }}</td>
-                </tr>
-            </table>
+        <!-- Network Information Section -->
+        <div class="network-info mb-8">
+            <h4 class="text-xl font-semibold text-gray-700 mb-4">Informations Réseau</h4>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-300 rounded-lg">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Format Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ network.id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ network.version }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ network.case_date }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ network.source_format }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div class="lines-section">
-            <h4>Lignes ({{ network.lines.len() }})</h4>
-            <table border="1">
-                <tr>
-                    <th>ID</th>
-                    <th>R (Ω)</th>
-                    <th>X (Ω)</th>
-                    <th>Bus 1</th>
-                    <th>Bus 2</th>
-                </tr>
-                {% for line in network.lines %}
-                <tr>
-                    <td>{{ line.id }}</td>
-                    <td>{{ line.r }}</td>
-                    <td>{{ line.x }}</td>
-                    <td>{{ line.bus1 }}</td>
-                    <td>{{ line.bus2 }}</td>
-                </tr>
-                {% endfor %}
-            </table>
+        <!-- Lines Section -->
+        <div class="lines-section mb-8">
+            <h4 class="text-xl font-semibold text-gray-700 mb-4">Lignes ({{ network.lines.len() }})</h4>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-300 rounded-lg">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">R (Ω)</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">X (Ω)</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bus 1</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bus 2</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in network.lines %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.r }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.x }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.bus1 }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.bus2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
+        <!-- Generators Section -->
         {% for substation in network.substations %}
             {% for vl in substation.voltage_levels %}
                 {% if let Some(generators) = vl.generators %}
                     {% if generators.len() > 0 %}
-                        <div class="generators-section">
-                            <h4>Générateurs du niveau de tension {{ vl.id }} ({{ vl.nominal_v }} kV)</h4>
-                            <table border="1">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Source</th>
-                                    <th>P (MW)</th>
-                                    <th>Q (MVAr)</th>
-                                    <th>V (kV)</th>
-                                    <th>Bus</th>
-                                </tr>
-                                {% for gen in generators %}
-                                <tr>
-                                    <td>{{ gen.id }}</td>
-                                    <td>{{ gen.energy_source }}</td>
-                                    <td>{{ gen.target_p }}</td>
-                                    <td>{{ gen.target_q }}</td>
-                                    <td>{{ gen.target_v }}</td>
-                                    <td>{{ gen.bus }}</td>
-                                </tr>
-                                {% endfor %}
-                            </table>
+                        <div class="generators-section mb-8">
+                            <h4 class="text-xl font-semibold text-gray-700 mb-4">
+                                Générateurs du niveau de tension {{ vl.id }} ({{ vl.nominal_v }} kV)
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full bg-white border border-gray-300 rounded-lg">
+                                    <thead>
+                                        <tr class="bg-gray-50">
+                                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P (MW)</th>
+                                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Q (MVAr)</th>
+                                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">V (kV)</th>
+                                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for gen in generators %}
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ gen.id }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ gen.energy_source }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ gen.target_p }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ gen.target_q }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ gen.target_v }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ gen.bus }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     {% endif %}
                 {% endif %}
             {% endfor %}
         {% endfor %}
     {% else %}
-        <pre>{{ message }}</pre>
+        <pre class="bg-gray-100 p-4 rounded-lg text-red-600">{{ message }}</pre>
     {% endif %}
 </div>
