@@ -1,0 +1,16 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+askama = { version="0.12.1", features = ["with-axum"] }
+askama_axum = "0.4.0"
+axum = { version = "0.8.1", features = ["macros"] }
+bevy_ecs = { workspace = true }
+iidm = {  path = "../iidm" }
+serde.workspace = true
+tokio = { version = "1.43.0", features = ["full"] }
+tower-http = { version="0.6.2", features = ["fs", "trace"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
