@@ -1,6 +1,8 @@
 use iidm::Network;
 use iidm::Updatable;
 
+const DATETIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.3f%:z";
+
 mod test_data {
     use super::*;
 
@@ -23,7 +25,7 @@ mod test_data {
         assert_eq!(network.version, "1.12");
         assert_eq!(network.id, "sim1");
         assert_eq!(
-            network.case_date.to_string(),
+            network.case_date.format(DATETIME_FORMAT).to_string(),
             "2013-01-15T18:45:00.000+01:00"
         );
         assert_eq!(network.forecast_distance, 0);
@@ -73,7 +75,7 @@ mod updates {
         });
 
         assert_eq!(
-            network.case_date.to_string(),
+            network.case_date.format(DATETIME_FORMAT).to_string(),
             "2024-02-21T10:00:00.000+01:00"
         );
         assert_eq!(network.forecast_distance, 1);
@@ -131,7 +133,7 @@ mod json_updates {
             .unwrap();
 
         assert_eq!(
-            network.case_date.to_string(),
+            network.case_date.format(DATETIME_FORMAT).to_string(),
             "2024-02-21T10:00:00.000+01:00"
         );
         assert_eq!(network.forecast_distance, 2);
@@ -151,6 +153,8 @@ mod integration_tests {
     };
     use chrono::DateTime;
     use iidm::{handle_update_events, AssetRegistry, Network, NetworkUpdate, UpdateEvent};
+
+    use crate::it::network::DATETIME_FORMAT;
 
     #[test]
     fn test_register_and_update_network() {
@@ -200,7 +204,7 @@ mod integration_tests {
         // Verify the network was updated correctly
         let network = world.entity(entity).get::<Network>().unwrap();
         assert_eq!(
-            network.case_date.to_string(),
+            network.case_date.format(DATETIME_FORMAT).to_string(),
             "2024-02-21T11:00:00.000+01:00"
         );
         assert_eq!(network.forecast_distance, 1);
