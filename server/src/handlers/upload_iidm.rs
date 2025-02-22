@@ -4,7 +4,7 @@ use askama::Template;
 use axum::extract::{Multipart, State};
 use axum::response::Html;
 use bevy_ecs::event::Events;
-use iidm::{Network, RegisterEvent};
+use iidm::{Identifiable, Network, RegisterEvent};
 
 use crate::states::AppState;
 
@@ -27,17 +27,22 @@ pub async fn upload_iidm(
                     iidm_table =
                         serde_json::to_string_pretty(&network).unwrap_or_else(|e| e.to_string());
 
+                    // Load ecs mutables
                     let ecs = state.ecs.read().await;
                     let mut world = ecs.world.write().await;
                     let mut schedule = ecs.schedule.write().await;
+
+                    // Get event writer
                     let mut event_writer = world.resource_mut::<Events<RegisterEvent<Network>>>();
                     event_writer.send(RegisterEvent {
-                        id: "line1".to_string(),
+                        id: network.id(),
                         component: network,
                     });
+
+                    // Apply state changed
                     schedule.run(&mut world);
                 } else {
-                    iidm_table = "Fichier JSON invalide".to_string();
+                    iidm_table = "Invalid JSON file".to_string();
                 }
             }
         }
