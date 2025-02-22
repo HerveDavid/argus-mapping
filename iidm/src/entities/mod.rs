@@ -1,36 +1,61 @@
+use crate::extensions::{Identifiable, Updatable};
+
+use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct Network {
     pub version: String,
     pub id: String,
+
     #[serde(rename = "caseDate")]
     pub case_date: DateTime<FixedOffset>,
+
     #[serde(rename = "forecastDistance")]
     pub forecast_distance: i32,
+
     #[serde(rename = "sourceFormat")]
     pub source_format: String,
+
     #[serde(rename = "minimumValidationLevel")]
     pub minimum_validation_level: String,
+
+    #[serde(default)]
     pub substations: Vec<Substation>,
+
+    #[serde(default)]
     pub lines: Vec<Line>,
+
     #[serde(rename = "threeWindingsTransformers")]
+    #[serde(default)]
     pub three_windings_transformers: Vec<ThreeWindingsTransformer>,
+
+    #[serde(default)]
     pub switches: Vec<Switch>,
+
     #[serde(rename = "shuntCompensators")]
+    #[serde(default)]
     pub shunt_compensators: Vec<ShuntCompensator>,
+
     #[serde(rename = "staticVarCompensators")]
+    #[serde(default)]
     pub static_var_compensators: Vec<StaticVarCompensator>,
+
     #[serde(rename = "danglingLines")]
+    #[serde(default)]
     pub dangling_lines: Vec<DanglingLine>,
+
     #[serde(rename = "tieLines")]
+    #[serde(default)]
     pub tie_lines: Vec<TieLine>,
+
     #[serde(rename = "hvdcLines")]
+    #[serde(default)]
     pub hvdc_lines: Vec<HvdcLine>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct Substation {
     pub id: String,
     pub country: String,
@@ -43,7 +68,7 @@ pub struct Substation {
     pub two_windings_transformers: Vec<TwoWindingsTransformer>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct VoltageLevel {
     pub id: String,
     #[serde(rename = "nominalV")]
@@ -62,14 +87,14 @@ pub struct VoltageLevel {
     pub bus_breaker_topology: Option<BusBreakerTopology>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TopologyKind {
     NodeBreaker,
     BusBreaker,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum EnergySource {
     Hydro,
@@ -80,7 +105,7 @@ pub enum EnergySource {
     Other,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct Generator {
     pub id: String,
     #[serde(rename = "energySource")]
@@ -106,12 +131,12 @@ pub struct Generator {
     pub min_max_reactive_limits: Option<MinMaxReactiveLimits>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct ReactiveCapabilityCurve {
     pub points: Vec<ReactiveCapabilityCurvePoint>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct ReactiveCapabilityCurvePoint {
     pub p: f64,
     #[serde(rename = "minQ")]
@@ -120,7 +145,7 @@ pub struct ReactiveCapabilityCurvePoint {
     pub max_q: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct MinMaxReactiveLimits {
     #[serde(rename = "minQ")]
     pub min_q: f64,
@@ -128,7 +153,7 @@ pub struct MinMaxReactiveLimits {
     pub max_q: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct Load {
     pub id: String,
     #[serde(rename = "loadType")]
@@ -144,7 +169,7 @@ pub struct Load {
     pub zip_model: Option<ZipLoadModel>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LoadType {
     Undefined,
@@ -152,7 +177,7 @@ pub enum LoadType {
     Fictitious,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct ExponentialLoadModel {
     pub p0: f64,
     pub q0: f64,
@@ -160,7 +185,7 @@ pub struct ExponentialLoadModel {
     pub nq: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct ZipLoadModel {
     pub p0: f64,
     pub q0: f64,
@@ -178,13 +203,15 @@ pub struct ZipLoadModel {
     pub p_q: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct BusBreakerTopology {
+    #[serde(default)]
     pub buses: Vec<Bus>,
+    #[serde(default)]
     pub switches: Vec<Switch>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct NodeBreakerTopology {
     pub nodes: Vec<Node>,
     pub switches: Vec<Switch>,
@@ -192,23 +219,23 @@ pub struct NodeBreakerTopology {
     pub internal_connections: Vec<InternalConnection>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct Node {
     pub id: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct InternalConnection {
     pub node1: i32,
     pub node2: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct Bus {
     pub id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct BusbarSection {
     pub id: String,
     pub name: String,
@@ -217,7 +244,7 @@ pub struct BusbarSection {
     pub connectable_bus: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct TwoWindingsTransformer {
     pub id: String,
     pub r: f64,
@@ -248,7 +275,7 @@ pub struct TwoWindingsTransformer {
     pub current_limits2: Option<CurrentLimits>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct ThreeWindingsTransformer {
     pub id: String,
     pub r1: f64,
@@ -296,7 +323,7 @@ pub struct ThreeWindingsTransformer {
     pub current_limits3: Option<CurrentLimits>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct RatioTapChanger {
     pub regulating: bool,
     #[serde(rename = "lowTapPosition")]
@@ -316,7 +343,7 @@ pub struct RatioTapChanger {
     pub steps: Vec<TapStep>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct PhaseTapChanger {
     pub regulating: bool,
     #[serde(rename = "lowTapPosition")]
@@ -334,7 +361,7 @@ pub struct PhaseTapChanger {
     pub steps: Vec<PhaseTapStep>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PhaseRegulationMode {
     CurrentLimiter,
@@ -342,14 +369,14 @@ pub enum PhaseRegulationMode {
     FixedTap,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RatioRegulationMode {
     Voltage,
     ReactivePower,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct Line {
     pub id: String,
     pub r: f64,
@@ -374,7 +401,7 @@ pub struct Line {
     pub current_limits2: Option<CurrentLimits>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct Switch {
     pub id: String,
     pub kind: SwitchKind,
@@ -386,7 +413,7 @@ pub struct Switch {
     pub voltage_level_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum SwitchKind {
     Breaker,
@@ -394,7 +421,7 @@ pub enum SwitchKind {
     LoadBreakSwitch,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct ShuntCompensator {
     pub id: String,
     #[serde(rename = "bPerSection")]
@@ -408,7 +435,7 @@ pub struct ShuntCompensator {
     pub connectable_bus: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct StaticVarCompensator {
     pub id: String,
     #[serde(rename = "bMin")]
@@ -426,7 +453,7 @@ pub struct StaticVarCompensator {
     pub connectable_bus: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum StaticVarCompensatorRegulationMode {
     Voltage,
@@ -434,7 +461,7 @@ pub enum StaticVarCompensatorRegulationMode {
     Off,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct DanglingLine {
     pub id: String,
     pub p0: f64,
@@ -448,7 +475,7 @@ pub struct DanglingLine {
     pub connectable_bus: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct TieLine {
     pub id: String,
     pub name: String,
@@ -460,7 +487,7 @@ pub struct TieLine {
     pub ucte_xnode_code: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct HvdcLine {
     pub id: String,
     pub name: String,
@@ -480,7 +507,7 @@ pub struct HvdcLine {
     pub converter_station2: HvdcConverterStation,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct HvdcConverterStation {
     pub id: String,
     pub name: String,
@@ -495,20 +522,20 @@ pub struct HvdcConverterStation {
     pub reactive_power_setpoint: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ConvertersMode {
     Side1RectifierSide2Inverter,
     Side1InverterSide2Rectifier,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]
 pub struct TerminalRef {
     pub id: String,
     pub side: Side,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct TapStep {
     pub r: f64,
     pub x: f64,
@@ -517,7 +544,7 @@ pub struct TapStep {
     pub rho: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct PhaseTapStep {
     pub r: f64,
     pub x: f64,
@@ -527,7 +554,7 @@ pub struct PhaseTapStep {
     pub alpha: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct CurrentLimits {
     #[serde(rename = "permanentLimit")]
     pub permanent_limit: f64,
@@ -535,7 +562,7 @@ pub struct CurrentLimits {
     pub temporary_limits: Vec<TemporaryLimit>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable)]
 pub struct TemporaryLimit {
     pub name: String,
     #[serde(rename = "acceptableDuration")]
@@ -543,7 +570,7 @@ pub struct TemporaryLimit {
     pub value: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Side {
     One,

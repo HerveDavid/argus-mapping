@@ -1,0 +1,17 @@
+[package]
+name = "iidm-derive"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+convert_case = "0.7.1"
+proc-macro2 = "1.0.93"
+quote = "1.0.38"
+syn = { version = "2.0.98", features = ["full", "extra-traits"] }
+
+[lib]
+proc-macro = true
+
+[dev-dependencies]
+serde = { workspace = true }
+serde_json = "1.0.139"
