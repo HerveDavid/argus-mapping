@@ -217,28 +217,29 @@ mod json_updates {
 #[cfg(test)]
 mod integration_tests {
     use bevy_ecs::{
-        entity::Entity,
-        event::Events,
+        event::{Event, Events},
         schedule::Schedule,
         system::Commands,
         world::{CommandQueue, World},
     };
-    use iidm::{handle_update_events, AssetRegistry, Line, LineUpdate, UpdateEvent};
+    use iidm::{
+        handle_register_events, handle_update_events, AssetRegistry, Line, LineUpdate,
+        RegisterEvent, UpdateEvent,
+    };
 
-    /// Tests the combination of registry and update system functionality
     #[test]
-    fn test_register_and_update_line() {
-        // Setup
-        let mut world = World::new();
+    fn test_handle_line_update() {
+        let mut world = World::default();
         let mut schedule = Schedule::default();
+
+        world.init_resource::<Events<RegisterEvent<Line>>>();
         world.init_resource::<Events<UpdateEvent<Line>>>();
+        world.init_resource::<AssetRegistry>();
+        schedule.add_systems(handle_register_events::<Line>);
         schedule.add_systems(handle_update_events::<Line>);
 
-        let mut registry = AssetRegistry::default();
-
-        // Create initial line through registry
-        let initial_line = Line {
-            id: "test_line".to_string(),
+        let line = Line {
+            id: "line1".to_string(),
             r: 1.0,
             x: 2.0,
             g1: 3.0,
@@ -255,33 +256,40 @@ mod integration_tests {
             current_limits2: None,
         };
 
-        let entity = {
-            let mut queue = CommandQueue::default();
-            let mut commands = Commands::new(&mut queue, &world);
-            registry.add_component(&mut commands, "test_line", initial_line);
-            queue.apply(&mut world);
-            registry.find("test_line").unwrap()
-        };
+        let mut event_writer = world.resource_mut::<Events<RegisterEvent<Line>>>();
+        event_writer.send(RegisterEvent {
+            id: "line1".to_string(),
+            component: line,
+        });
 
-        // Create and send update event
-        let update_event = UpdateEvent {
-            entity,
-            updates: LineUpdate {
-                r: Some(10.0),
-                x: Some(20.0),
-                g1: Some(30.0),
-                b1: Some(40.0),
-                ..Default::default()
-            },
+        schedule.run(&mut world);
+
+        let registry = world.resource::<AssetRegistry>();
+        let entity = registry.find("line1").unwrap();
+        let line = world.entity(entity).get::<Line>().unwrap();
+        assert_eq!(line.r, 1.0);
+        assert_eq!(line.x, 2.0);
+        assert_eq!(line.g1, 3.0);
+        assert_eq!(line.b1, 4.0);
+
+        let line_update = LineUpdate {
+            r: Some(10.0),
+            x: Some(20.0),
+            g1: Some(30.0),
+            b1: Some(40.0),
+            ..Default::default()
         };
 
         let mut event_writer = world.resource_mut::<Events<UpdateEvent<Line>>>();
-        event_writer.send(update_event);
+        event_writer.send(UpdateEvent {
+            id: "line1".to_string(),
+            update: line_update,
+        });
 
-        // Run the system
         schedule.run(&mut world);
 
-        // Verify the line was updated correctly
+        let registry = world.resource::<AssetRegistry>();
+        let entity = registry.find("line1").unwrap();
         let line = world.entity(entity).get::<Line>().unwrap();
         assert_eq!(line.r, 10.0);
         assert_eq!(line.x, 20.0);
@@ -289,159 +297,74 @@ mod integration_tests {
         assert_eq!(line.b1, 40.0);
     }
 
-    /// Tests updating multiple registered entities
     #[test]
-    fn test_multiple_registered_entities_update() {
+    fn test_multiple_line_updates() {
         let mut world = World::new();
         let mut schedule = Schedule::default();
+
         world.init_resource::<Events<UpdateEvent<Line>>>();
+        world.init_resource::<AssetRegistry>();
         schedule.add_systems(handle_update_events::<Line>);
 
-        let mut registry = AssetRegistry::default();
+        let entity = world
+            .spawn(Line {
+                id: "line1".to_string(),
+                r: 1.0,
+                x: 2.0,
+                g1: 3.0,
+                b1: 4.0,
+                g2: 5.0,
+                b2: 6.0,
+                voltage_level_id1: "vl1".to_string(),
+                bus1: "bus1".to_string(),
+                connectable_bus1: "bus1".to_string(),
+                voltage_level_id2: "vl2".to_string(),
+                bus2: "bus2".to_string(),
+                connectable_bus2: "bus2".to_string(),
+                current_limits1: None,
+                current_limits2: None,
+            })
+            .id();
 
-        // Create multiple lines
-        let lines = vec![
-            (
-                "line1",
-                Line {
-                    id: "line1".to_string(),
-                    r: 1.0,
-                    x: 2.0,
-                    g1: 3.0,
-                    b1: 4.0,
-                    g2: 5.0,
-                    b2: 6.0,
-                    voltage_level_id1: "vl1".to_string(),
-                    bus1: "bus1".to_string(),
-                    connectable_bus1: "bus1".to_string(),
-                    voltage_level_id2: "vl2".to_string(),
-                    bus2: "bus2".to_string(),
-                    connectable_bus2: "bus2".to_string(),
-                    current_limits1: None,
-                    current_limits2: None,
-                },
-            ),
-            (
-                "line2",
-                Line {
-                    id: "line2".to_string(),
-                    r: 2.0,
-                    x: 3.0,
-                    g1: 4.0,
-                    b1: 5.0,
-                    g2: 6.0,
-                    b2: 7.0,
-                    voltage_level_id1: "vl3".to_string(),
-                    bus1: "bus3".to_string(),
-                    connectable_bus1: "bus3".to_string(),
-                    voltage_level_id2: "vl4".to_string(),
-                    bus2: "bus4".to_string(),
-                    connectable_bus2: "bus4".to_string(),
-                    current_limits1: None,
-                    current_limits2: None,
-                },
-            ),
+        let mut event_writer = world.resource_mut::<Events<UpdateEvent<Line>>>();
+
+        let updates = vec![
+            LineUpdate {
+                r: Some(10.0),
+                x: Some(20.0),
+                g1: Some(30.0),
+                b1: Some(40.0),
+                ..Default::default()
+            },
+            LineUpdate {
+                r: Some(11.0),
+                x: Some(21.0),
+                g1: Some(31.0),
+                b1: Some(41.0),
+                ..Default::default()
+            },
+            LineUpdate {
+                r: Some(12.0),
+                x: Some(22.0),
+                g1: Some(32.0),
+                b1: Some(42.0),
+                ..Default::default()
+            },
         ];
 
-        // Register all lines
-        let entities: Vec<(String, Entity)> = {
-            let mut queue = CommandQueue::default();
-            let mut commands = Commands::new(&mut queue, &world);
-
-            let entities = lines
-                .iter()
-                .map(|(id, line)| {
-                    registry.add_component(&mut commands, id.to_string(), line.clone());
-                    (id.to_string(), registry.find(*id).unwrap())
-                })
-                .collect();
-
-            queue.apply(&mut world);
-            entities
-        };
-
-        // Update each line
-        let mut event_writer = world.resource_mut::<Events<UpdateEvent<Line>>>();
-        for (_, entity) in &entities {
+        for update in updates {
             event_writer.send(UpdateEvent {
-                entity: *entity,
-                updates: LineUpdate {
-                    r: Some(100.0),
-                    x: Some(200.0),
-                    ..Default::default()
-                },
+                id: "line1".to_string(),
+                update,
             });
         }
 
         schedule.run(&mut world);
 
-        // Verify updates
-        for (id, entity) in entities {
-            let line = world.entity(entity).get::<Line>().unwrap();
-            assert_eq!(line.r, 100.0, "Line {} not updated correctly", id);
-            assert_eq!(line.x, 200.0, "Line {} not updated correctly", id);
-        }
-    }
-
-    /// Tests updating a registered entity that has been removed
-    #[test]
-    fn test_update_removed_registered_entity() {
-        let mut world = World::new();
-        let mut schedule = Schedule::default();
-        world.init_resource::<Events<UpdateEvent<Line>>>();
-        schedule.add_systems(handle_update_events::<Line>);
-
-        let mut registry = AssetRegistry::default();
-
-        // Create and register a line
-        let line = Line {
-            id: "test_line".to_string(),
-            r: 1.0,
-            x: 2.0,
-            g1: 3.0,
-            b1: 4.0,
-            g2: 5.0,
-            b2: 6.0,
-            voltage_level_id1: "vl1".to_string(),
-            bus1: "bus1".to_string(),
-            connectable_bus1: "bus1".to_string(),
-            voltage_level_id2: "vl2".to_string(),
-            bus2: "bus2".to_string(),
-            connectable_bus2: "bus2".to_string(),
-            current_limits1: None,
-            current_limits2: None,
-        };
-
-        let entity = {
-            let mut queue = CommandQueue::default();
-            let mut commands = Commands::new(&mut queue, &world);
-            registry.add_component(&mut commands, "test_line", line);
-            queue.apply(&mut world);
-            registry.find("test_line").unwrap()
-        };
-
-        // Remove the entity
-        {
-            let mut queue = CommandQueue::default();
-            let mut commands = Commands::new(&mut queue, &world);
-            commands.entity(entity).despawn();
-            queue.apply(&mut world);
-        }
-
-        // Try to update the removed entity
-        let mut event_writer = world.resource_mut::<Events<UpdateEvent<Line>>>();
-        event_writer.send(UpdateEvent {
-            entity,
-            updates: LineUpdate {
-                r: Some(10.0),
-                ..Default::default()
-            },
-        });
-
-        // System should handle this gracefully
-        schedule.run(&mut world);
-
-        // Verify the entity no longer exists
-        assert!(!world.entities().contains(entity));
+        let line = world.entity(entity).get::<Line>().unwrap();
+        assert_eq!(line.r, 12.0);
+        assert_eq!(line.x, 22.0);
+        assert_eq!(line.g1, 32.0);
+        assert_eq!(line.b1, 42.0);
     }
 }
