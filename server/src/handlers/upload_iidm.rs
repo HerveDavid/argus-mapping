@@ -47,18 +47,25 @@ pub async fn upload_iidm(
     State(state): State<Arc<AppState>>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, UploadError> {
-    let network = process_upload(&mut multipart).await?;
+    let result = process_upload(&mut multipart).await;
 
-    // Update ECS state
-    update_ecs_state(&state, &network).await;
-
-    let iidm_table =
-        serde_json::to_string_pretty(&network).map_err(|e| NetworkError::Serialization(e))?;
-
-    let template = IIdmTableTemplate::new(iidm_table, Some(network));
-    let html = template.render().map_err(UploadError::TemplateError)?;
-
-    Ok(Html(html))
+    match result {
+        Ok(network) => {
+            update_ecs_state(&state, &network).await;
+            let iidm_table = serde_json::to_string_pretty(&network)
+                .map_err(|e| NetworkError::Serialization(e))?;
+            let template = IIdmTableTemplate::new(iidm_table, Some(network));
+            let html = template.render().map_err(UploadError::TemplateError)?;
+            Ok(Html(html))
+        }
+        Err(err) => {
+            // Cas d'erreur
+            let error_message = err.to_string();
+            let template = IIdmTableTemplate::new(error_message, None);
+            let html = template.render().map_err(UploadError::TemplateError)?;
+            Ok(Html(html))
+        }
+    }
 }
 
 async fn process_upload(multipart: &mut Multipart) -> Result<Network, UploadError> {
