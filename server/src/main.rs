@@ -1,20 +1,15 @@
 mod handlers;
-mod templates;
+mod states;
 
 use axum::{
     routing::{get, get_service, post},
     Router,
 };
 use handlers::{increment, index, upload_iidm};
-use std::sync::atomic::AtomicU64;
+use states::AppState;
 use std::sync::Arc;
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-// Share state
-struct AppState {
-    counter: AtomicU64,
-}
 
 #[tokio::main]
 async fn main() {
@@ -26,11 +21,6 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    // Init shared state
-    let state = Arc::new(AppState {
-        counter: AtomicU64::new(0),
-    });
-
     // Build routes
     let app = Router::new()
         .route("/", get(index))
@@ -38,7 +28,7 @@ async fn main() {
         .route("/upload", post(upload_iidm))
         .nest_service("/static", get_service(ServeDir::new("static")))
         .layer(TraceLayer::new_for_http())
-        .with_state(state);
+        .with_state(Arc::new(AppState::default()));
 
     // Start server
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")

@@ -10,6 +10,7 @@ axum = { version = "0.8.1", features = ["macros", "multipart"] }
 bevy_ecs = { workspace = true }
 iidm = {  path = "../iidm" }
 serde.workspace = true
+serde_json = "1.0.139"
 tokio = { version = "1.43.0", features = ["full"] }
 tower-http = { version="0.6.2", features = ["fs", "trace"] }
 tracing = "0.1.41"
