@@ -12,6 +12,7 @@ use crate::states::AppState;
 #[template(path = "iidm_table.html")]
 struct IIdmTableTemplate {
     iidm_table: String,
+    network: Option<Network>,
 }
 
 pub async fn upload_iidm(
@@ -48,6 +49,10 @@ pub async fn upload_iidm(
         }
     }
 
-    let template = IIdmTableTemplate { iidm_table };
+    let network: Option<Network> = serde_json::from_str(&iidm_table).ok();
+    let template = IIdmTableTemplate {
+        iidm_table: iidm_table.clone(),
+        network,
+    };
     Html(template.render().unwrap())
 }

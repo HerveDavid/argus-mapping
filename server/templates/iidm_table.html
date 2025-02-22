@@ -1,4 +1,78 @@
 <div id="iidm-table">
-  <h3>Résultat:</h3>
-  <pre>{{ iidm_table }}</pre>
+    <h3>Résultat:</h3>
+    {% if let Some(network) = network %}
+        <div class="network-info">
+            <h4>Informations Réseau</h4>
+            <table border="1">
+                <tr>
+                    <th>ID</th>
+                    <th>Version</th>
+                    <th>Date</th>
+                    <th>Format Source</th>
+                </tr>
+                <tr>
+                    <td>{{ network.id }}</td>
+                    <td>{{ network.version }}</td>
+                    <td>{{ network.case_date }}</td>
+                    <td>{{ network.source_format }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="lines-section">
+            <h4>Lignes ({{ network.lines.len() }})</h4>
+            <table border="1">
+                <tr>
+                    <th>ID</th>
+                    <th>R (Ω)</th>
+                    <th>X (Ω)</th>
+                    <th>Bus 1</th>
+                    <th>Bus 2</th>
+                </tr>
+                {% for line in network.lines %}
+                <tr>
+                    <td>{{ line.id }}</td>
+                    <td>{{ line.r }}</td>
+                    <td>{{ line.x }}</td>
+                    <td>{{ line.bus1 }}</td>
+                    <td>{{ line.bus2 }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        {% for substation in network.substations %}
+            {% for vl in substation.voltage_levels %}
+                {% if let Some(generators) = vl.generators %}
+                    {% if generators.len() > 0 %}
+                        <div class="generators-section">
+                            <h4>Générateurs du niveau de tension {{ vl.id }} ({{ vl.nominal_v }} kV)</h4>
+                            <table border="1">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Source</th>
+                                    <th>P (MW)</th>
+                                    <th>Q (MVAr)</th>
+                                    <th>V (kV)</th>
+                                    <th>Bus</th>
+                                </tr>
+                                {% for gen in generators %}
+                                <tr>
+                                    <td>{{ gen.id }}</td>
+                                    <td>{{ gen.energy_source }}</td>
+                                    <td>{{ gen.target_p }}</td>
+                                    <td>{{ gen.target_q }}</td>
+                                    <td>{{ gen.target_v }}</td>
+                                    <td>{{ gen.bus }}</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+    {% else %}
+        <pre>{{ iidm_table }}</pre>
+    {% endif %}
 </div>
