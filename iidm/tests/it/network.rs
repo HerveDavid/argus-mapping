@@ -221,13 +221,15 @@ mod identiable {
         assert!(substations.iter().any(|s| s.id == "sub2"));
     }
 
-    // #[test]
+    #[test]
     fn test_network_register_empty() {
         let mut world = World::new();
         let mut schedule = Schedule::default();
 
         world.init_resource::<AssetRegistry>();
+        world.init_resource::<Events<RegisterEvent<Network>>>();
         world.init_resource::<Events<RegisterEvent<Substation>>>();
+        schedule.add_systems(handle_register_events::<Network>);
         schedule.add_systems(handle_register_events::<Substation>);
 
         let mut network = test_data::create_test_network();
@@ -241,13 +243,15 @@ mod identiable {
         assert_eq!(substations.len(), 0);
     }
 
-    // #[test]
+    #[test]
     fn test_network_register_idempotency() {
         let mut world = World::new();
         let mut schedule = Schedule::default();
 
         world.init_resource::<AssetRegistry>();
+        world.init_resource::<Events<RegisterEvent<Network>>>();
         world.init_resource::<Events<RegisterEvent<Substation>>>();
+        schedule.add_systems(handle_register_events::<Network>);
         schedule.add_systems(handle_register_events::<Substation>);
 
         let network = test_data::create_test_network();

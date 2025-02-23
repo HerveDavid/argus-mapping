@@ -1,5 +1,3 @@
-use std::path::PrefixComponent;
-
 use bevy_ecs::prelude::*;
 
 use crate::{AssetRegistry, Identifiable, Updatable};
