@@ -1,23 +1,12 @@
 use askama::Template;
-use axum::extract::State;
 use axum::response::Html;
-use std::sync::atomic::Ordering;
-use std::sync::Arc;
-
-use crate::AppState;
 
 #[derive(Template)]
 #[template(path = "index.html")]
-struct IndexTemplate {
-    pub title: String,
-    pub count: u64,
-}
+struct IndexTemplate;
 
-pub async fn index(State(state): State<Arc<AppState>>) -> Html<String> {
-    let template = IndexTemplate {
-        title: "Demo HTMX avec Rust".to_string(),
-        count: state.counter.load(Ordering::Relaxed),
-    };
+pub async fn index() -> Html<String> {
+    let template = IndexTemplate;
 
     Html(template.render().unwrap())
 }
