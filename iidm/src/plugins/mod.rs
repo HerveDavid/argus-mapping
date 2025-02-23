@@ -46,7 +46,6 @@ pub fn handle_register_events<T: Component + Identifiable + Clone>(
     T: 'static,
 {
     for RegisterEvent { id, component } in register_events.read() {
-        dbg!("{:?}", id);
         registery.add_component(&mut commands, id, component.clone());
     }
 }
