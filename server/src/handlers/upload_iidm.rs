@@ -5,8 +5,7 @@ use axum::{
     http::StatusCode,
     response::{Html, IntoResponse, Response},
 };
-use bevy_ecs::event::Events;
-use iidm::{Identifiable, Network, NetworkError, RegisterEvent};
+use iidm::*;
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -52,9 +51,7 @@ pub async fn upload_iidm(
     match result {
         Ok(network) => {
             update_ecs_state(&state, &network).await;
-            let iidm_table = serde_json::to_string_pretty(&network)
-                .map_err(|e| NetworkError::Serialization(e))?;
-            let template = IIdmTableTemplate::new(iidm_table, Some(network));
+            let template = IIdmTableTemplate::new("".to_string(), Some(network));
             let html = template.render().map_err(UploadError::TemplateError)?;
             Ok(Html(html))
         }
@@ -88,11 +85,5 @@ async fn update_ecs_state(state: &Arc<AppState>, network: &Network) {
     let mut world = ecs.world.write().await;
     let mut schedule = ecs.schedule.write().await;
 
-    let mut event_writer = world.resource_mut::<Events<RegisterEvent<Network>>>();
-    event_writer.send(RegisterEvent {
-        id: network.id(),
-        component: network.clone(),
-    });
-
-    schedule.run(&mut world);
+    network.register(&mut world, &mut schedule);
 }

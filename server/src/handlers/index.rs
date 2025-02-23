@@ -7,6 +7,5 @@ struct IndexTemplate;
 
 pub async fn index() -> Html<String> {
     let template = IndexTemplate;
-
     Html(template.render().unwrap())
 }
