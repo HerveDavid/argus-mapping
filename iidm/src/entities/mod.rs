@@ -1,4 +1,5 @@
 use crate::extensions::{Identifiable, Updatable};
+use crate::plugins::RegisterEvent;
 
 use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
