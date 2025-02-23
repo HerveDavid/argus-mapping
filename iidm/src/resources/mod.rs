@@ -2,7 +2,7 @@ use bevy_ecs::prelude::*;
 use std::collections::HashMap;
 
 /// Unique identifier component for an entity
-#[derive(Component, Debug, Clone)]
+#[derive(Debug, Clone, Component)]
 pub struct Id(String);
 
 impl Id {

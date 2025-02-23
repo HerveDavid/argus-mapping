@@ -22,15 +22,12 @@ pub fn impl_identifiable_trait(ast: DeriveInput) -> TokenStream {
                         id: self.id(),
                         component: self.clone(),
                     });
-                    dbg!("{:?}", self.id());
                 }
 
                 // Then recursively register all identifiable fields
                 #register_impl
 
                 schedule.run(world);
-
-                dbg!("apply the world");
             }
         }
     };
@@ -78,15 +75,10 @@ pub fn generate_register_impl(data: &Data) -> TokenStream {
                         #(#field_registers)*
                     }
                 }
-                _ => quote! {
-                                dbg!("2");
-                },
+                _ => quote! {},
             }
         }
-        _ => quote! {
-
-                                dbg!("3")
-        },
+        _ => quote! {},
     }
 }
 
