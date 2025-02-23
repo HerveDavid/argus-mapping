@@ -1,5 +1,5 @@
 [workspace]
-members = ["iidm", "iidm-derive"]
+members = ["iidm", "iidm-derive", "server"]
 resolver = "2"
 
 [workspace.dependencies]

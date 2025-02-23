@@ -1,4 +1,5 @@
 use crate::extensions::{Identifiable, Updatable};
+use crate::plugins::RegisterEvent;
 
 use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
@@ -103,6 +104,19 @@ pub enum EnergySource {
     Thermal,
     Solar,
     Other,
+}
+
+impl std::fmt::Display for EnergySource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EnergySource::Hydro => write!(f, "Hydro"),
+            EnergySource::Nuclear => write!(f, "Nuclear"),
+            EnergySource::Wind => write!(f, "Wind"),
+            EnergySource::Thermal => write!(f, "Thermal"),
+            EnergySource::Solar => write!(f, "Solar"),
+            EnergySource::Other => write!(f, "Other"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable)]

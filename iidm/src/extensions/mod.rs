@@ -1,8 +1,11 @@
 pub use iidm_derive::{Identifiable, Updatable};
+
+use bevy_ecs::{schedule::Schedule, world::World};
 use serde::{Deserialize, Serialize};
 
 pub trait Identifiable {
     fn id(&self) -> String;
+    fn register(&self, world: &mut World, schedule: &mut Schedule);
 }
 
 pub trait Updatable: Sized + Serialize + for<'de> Deserialize<'de> {

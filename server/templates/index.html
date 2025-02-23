@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>HTMX Rust Demo</title>
+    <script src="/static/js/htmx.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div id="iidm-upload" class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6">
+        <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Upload IIDM</h2>
+        
+        <form hx-post="/upload"
+              hx-target="#iidm-table"
+              method="POST"
+              hx-encoding="multipart/form-data"
+              class="space-y-6">
+            
+            <div class="flex flex-col items-center justify-center w-full">
+                <label for="iidm_file" 
+                       class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                        <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        <p class="mb-2 text-sm text-gray-500">
+                            <span class="font-semibold">Cliquez pour uploader</span> ou glissez-déposez
+                        </p>
+                        <p class="text-xs text-gray-500">Fichier JSON uniquement</p>
+                    </div>
+                    <input type="file"
+                           id="iidm_file"
+                           name="iidm_file"
+                           accept=".json"
+                           required
+                           class="hidden" />
+                </label>
+            </div>
+
+            <div class="flex justify-center">
+                <button type="submit"
+                        class="bg-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform transition-all duration-200 ease-in-out hover:scale-105">
+                    Envoyer le fichier
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="iidm-table" class="mt-8"></div>
+</body>
+</html>
