@@ -114,7 +114,7 @@ pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
         // First include the error enum
         #error_type
 
-        #[derive(Default, serde::Serialize, serde::Deserialize, Clone)]
+        #[derive(Default, Clone, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
         #[serde(default)]
         pub struct #update_name {
             #(#field_defs,)*
