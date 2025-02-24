@@ -7,7 +7,7 @@ use axum::{
 };
 use handlers::{index, upload_iidm};
 use states::AppState;
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -21,11 +21,14 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    // Path for js dependencies
+    let static_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
+
     // Build routes
     let app = Router::new()
         .route("/", get(index))
         .route("/upload", post(upload_iidm))
-        .nest_service("/static", get_service(ServeDir::new("static")))
+        .nest_service("/static", get_service(ServeDir::new(static_path)))
         .layer(TraceLayer::new_for_http())
         .with_state(Arc::new(AppState::default()));
 
