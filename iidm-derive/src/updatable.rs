@@ -122,10 +122,10 @@ pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
 
         impl Updatable for #name {
 
-            type Event = #update_name;
+            type Updater = #update_name;
             type Err =#error_name;
 
-            fn update(&mut self, updates: Self::Event) {
+            fn update(&mut self, updates: Self::Updater) {
                 #(#update_impl)*
             }
 

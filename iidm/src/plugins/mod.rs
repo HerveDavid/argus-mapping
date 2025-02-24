@@ -6,10 +6,10 @@ use crate::{AssetRegistry, Identifiable, Updatable};
 pub struct UpdateEvent<T: Updatable>
 where
     T: 'static,
-    T::Event: Send + Sync,
+    T::Updater: Send + Sync,
 {
     pub id: String,
-    pub update: T::Event,
+    pub update: T::Updater,
 }
 
 pub fn handle_update_events<T: Component + Updatable>(
@@ -18,7 +18,7 @@ pub fn handle_update_events<T: Component + Updatable>(
     mut query: Query<&mut T>,
 ) where
     T: 'static,
-    T::Event: Send + Sync + Clone,
+    T::Updater: Send + Sync + Clone,
 {
     for UpdateEvent { id, update } in update_events.read() {
         if let Some(entity) = registery.find(id) {

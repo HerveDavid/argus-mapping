@@ -5,7 +5,7 @@ use axum::{
     routing::{get, get_service, post},
     Router,
 };
-use handlers::{index, upload_iidm};
+use handlers::{index, update_iidm, upload_iidm};
 use states::AppState;
 use std::{path::PathBuf, sync::Arc};
 use tower_http::{services::ServeDir, trace::TraceLayer};
@@ -28,6 +28,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(index))
         .route("/upload", post(upload_iidm))
+        .route("/update", post(update_iidm))
         .nest_service("/static", get_service(ServeDir::new(static_path)))
         .layer(TraceLayer::new_for_http())
         .with_state(Arc::new(AppState::default()));
