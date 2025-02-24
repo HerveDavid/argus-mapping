@@ -229,80 +229,80 @@ fn test_partial_updates() {
 }
 
 // Trait to define the expected JSON schema
-trait JsonSchema: for<'de> Deserialize<'de> + Serialize {
-    type Err;
-    fn fields_json() -> Vec<String>;
-    fn validate_json(json: &str) -> Result<Self, Self::Err>;
-}
+// trait JsonSchema: for<'de> Deserialize<'de> + Serialize {
+//     type Err;
+//     fn fields_json() -> Vec<String>;
+//     fn validate_json(json: &str) -> Result<Self, Self::Err>;
+// }
 
-fn validate_json<T>(json: &str) -> Result<T, serde_json::Error>
-where
-    T: JsonSchema + for<'de> Deserialize<'de> + schemars::JsonSchema,
-{
-    // Parse as Value for initial validation
-    let value: Value = serde_json::from_str(json)?;
+// fn validate_json<T>(json: &str) -> Result<T, serde_json::Error>
+// where
+//     T: JsonSchema + for<'de> Deserialize<'de> + schemars::JsonSchema,
+// {
+//     // Parse as Value for initial validation
+//     let value: Value = serde_json::from_str(json)?;
 
-    // Make sure it's an object
-    let obj = value
-        .as_object()
-        .ok_or_else(|| serde_json::Error::custom("JSON input must be an object"))?;
+//     // Make sure it's an object
+//     let obj = value
+//         .as_object()
+//         .ok_or_else(|| serde_json::Error::custom("JSON input must be an object"))?;
 
-    // Check for unexpected fields
-    let schema_fields = T::fields_json();
-    for field in obj.keys() {
-        if !schema_fields.contains(&field.to_string()) {
-            return Err(serde_json::Error::custom(format!(
-                "Unexpected field: {}",
-                field
-            )));
-        }
-    }
+//     // Check for unexpected fields
+//     let schema_fields = T::fields_json();
+//     for field in obj.keys() {
+//         if !schema_fields.contains(&field.to_string()) {
+//             return Err(serde_json::Error::custom(format!(
+//                 "Unexpected field: {}",
+//                 field
+//             )));
+//         }
+//     }
 
-    // Get the JSON schema for T
-    let schema = schemars::schema_for!(T);
-    let schema_value = serde_json::to_value(&schema).map_err(|e| {
-        serde_json::Error::custom(format!("Failed to convert schema to value: {}", e))
-    })?;
+//     // Get the JSON schema for T
+//     let schema = schemars::schema_for!(T);
+//     let schema_value = serde_json::to_value(&schema).map_err(|e| {
+//         serde_json::Error::custom(format!("Failed to convert schema to value: {}", e))
+//     })?;
 
-    // Utilisation correcte de jsonschema
-    let instance = &value;
-    let result = jsonschema::validate(&schema_value, instance);
+//     // Utilisation correcte de jsonschema
+//     let instance = &value;
+//     let result = jsonschema::validate(&schema_value, instance);
 
-    if let Err(errors) = result {
-        return Err(serde_json::Error::custom(format!(
-            "Schema validation failed: {}",
-            errors
-        )));
-    }
+//     if let Err(errors) = result {
+//         return Err(serde_json::Error::custom(format!(
+//             "Schema validation failed: {}",
+//             errors
+//         )));
+//     }
 
-    // If validation passes, deserialize the input
-    serde_json::from_value(value)
-}
+//     // If validation passes, deserialize the input
+//     serde_json::from_value(value)
+// }
 
-impl JsonSchema for TemporaryLimitUpdater {
-    type Err = TemporaryLimitError;
+// impl JsonSchema for TemporaryLimitUpdater {
+//     type Err = TemporaryLimitError;
 
-    fn fields_json() -> Vec<String> {
-        vec![
-            "name".to_string(),
-            "acceptableDuration".to_string(),
-            "value".to_string(),
-        ]
-    }
+//     fn fields_json() -> Vec<String> {
+//         vec![
+//             "name".to_string(),
+//             "acceptableDuration".to_string(),
+//             "value".to_string(),
+//         ]
+//     }
 
-    fn validate_json(json: &str) -> Result<Self, Self::Err> {
-        validate_json(json).map_err(TemporaryLimitError::Deserialization)
-    }
-}
+//     fn validate_json(json: &str) -> Result<Self, Self::Err> {
+//         iidm::libs::json::validate_json(json).map_err(TemporaryLimitError::Deserialization)
+//     }
+// }
 
-impl JsonSchema for CurrentLimitsUpdater {
-    type Err = CurrentLimitsError;
+// impl JsonSchema for CurrentLimitsUpdater {
+//     type Err = CurrentLimitsError;
 
-    fn fields_json() -> Vec<String> {
-        vec!["permanentLimit".to_string(), "temporaryLimits".to_string()]
-    }
+//     fn fields_json() -> Vec<String> {
+//         vec!["permanentLimit".to_string(), "temporaryLimits".to_string()]
+//     }
 
-    fn validate_json(json: &str) -> Result<Self, Self::Err> {
-        validate_json(json).map_err(CurrentLimitsError::Deserialization)
-    }
-}
+//     fn validate_json(json: &str) -> Result<Self, Self::Err> {
+//         iidm::libs::json::validate_json(json).map_err(CurrentLimitsError::Deserialization)
+//     }
+// }

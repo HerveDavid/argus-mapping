@@ -120,10 +120,26 @@ pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
             #(#field_defs,)*
         }
 
+        // impl JsonSchema for #update_name {
+        //     type Err = #error_name;
+
+        //     fn fields_json() -> Vec<String> {
+        //         vec![
+        //             "name".to_string(),
+        //             "acceptableDuration".to_string(),
+        //             "value".to_string(),
+        //         ]
+        //     }
+
+        //     fn validate_json(json: &str) -> Result<Self, Self::Err> {
+        //         crate::libs::json::validate_json(json).map_err(|e| Self::Err::Deserialization(e))
+        //     }
+        // }
+
         impl Updatable for #name {
 
             type Updater = #update_name;
-            type Err =#error_name;
+            type Err = #error_name;
 
             fn update(&mut self, updates: Self::Updater) {
                 #(#update_impl)*
