@@ -6,7 +6,8 @@ where
     T: crate::extensions::JsonSchema + for<'de> Deserialize<'de> + schemars::JsonSchema,
 {
     // Parse as Value for initial validation
-    let value: Value = serde_json::from_str(json)?;
+    let value: Value = serde_json::from_str(json)
+        .map_err(|e| serde_json::Error::custom(format!("Invalid JSON format: {}", e)))?;
 
     // Make sure it's an object
     let obj = value
@@ -30,7 +31,7 @@ where
         serde_json::Error::custom(format!("Failed to convert schema to value: {}", e))
     })?;
 
-    // Utilisation correcte de jsonschema
+    // Correct use of jsonschema
     let instance = &value;
     let result = jsonschema::validate(&schema_value, instance);
 

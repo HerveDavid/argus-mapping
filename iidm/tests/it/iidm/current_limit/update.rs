@@ -1,12 +1,52 @@
 use iidm::{CurrentLimitsError, CurrentLimitsUpdater, JsonSchema, TemporaryLimitUpdater};
 
 #[test]
+fn test_update_from_not_json_updater() {
+    let json = r#"{"permanentLimits": 1.0"#; // Incorrect json
+    let validation = CurrentLimitsUpdater::validate_json(json);
+    assert!(
+        validation.is_err(),
+        "Validation should fail with an incorrect json"
+    );
+    match validation.err().unwrap() {
+        CurrentLimitsError::Deserialization(error) => {
+            assert!(
+                error.to_string().contains("Invalid JSON"),
+                "Error should indicate an unexpected field issue: {}",
+                error
+            );
+        }
+        _ => panic!("Expected a Deserialization error"),
+    }
+}
+
+#[test]
 fn test_update_from_bad_key_json_updater() {
     let json = r#"{"permanentLimits": 1.0}"#; // Incorrect key
     let validation = CurrentLimitsUpdater::validate_json(json);
     assert!(
         validation.is_err(),
         "Validation should fail with an incorrect key"
+    );
+    match validation.err().unwrap() {
+        CurrentLimitsError::Deserialization(error) => {
+            assert!(
+                error.to_string().contains("Unexpected field"),
+                "Error should indicate an unexpected field issue: {}",
+                error
+            );
+        }
+        _ => panic!("Expected a Deserialization error"),
+    }
+}
+
+#[test]
+fn test_update_from_bad_case_key_json_updater() {
+    let json = r#"{"permanent_limit": 1}"#; // Incorrect key type
+    let validation = CurrentLimitsUpdater::validate_json(json);
+    assert!(
+        validation.is_err(),
+        "Validation should fail with an incorrect value type"
     );
     match validation.err().unwrap() {
         CurrentLimitsError::Deserialization(error) => {
@@ -32,26 +72,6 @@ fn test_update_from_bad_value_json_updater() {
         CurrentLimitsError::Deserialization(error) => {
             assert!(
                 error.to_string().contains("Schema validation failed"),
-                "Error should indicate an unexpected field issue: {}",
-                error
-            );
-        }
-        _ => panic!("Expected a Deserialization error"),
-    }
-}
-
-#[test]
-fn test_update_from_bad_case_key_json_updater() {
-    let json = r#"{"permanent_limit": 1}"#; // Incorrect value type
-    let validation = CurrentLimitsUpdater::validate_json(json);
-    assert!(
-        validation.is_err(),
-        "Validation should fail with an incorrect value type"
-    );
-    match validation.err().unwrap() {
-        CurrentLimitsError::Deserialization(error) => {
-            assert!(
-                error.to_string().contains("Unexpected field"),
                 "Error should indicate an unexpected field issue: {}",
                 error
             );
