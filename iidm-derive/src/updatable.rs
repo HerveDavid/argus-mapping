@@ -68,7 +68,7 @@ pub fn impl_error_for_struct(ast: &DeriveInput) -> TokenStream {
 pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
     // get struct identifier
     let name = &ast.ident;
-    let update_name = syn::Ident::new(&format!("{}Update", name), name.span());
+    let update_name = syn::Ident::new(&format!("{}Updater", name), name.span());
     let error_name = syn::Ident::new(&format!("{}Error", name), name.span());
 
     // generate the error type

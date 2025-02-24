@@ -1,15 +1,11 @@
+use super::*;
 use bevy_ecs::{event::Events, schedule::Schedule, world::World};
-use iidm::{
-    handle_register_events, handle_update_events, AssetRegistry, CurrentLimits, Line, LineUpdate,
-    RegisterEvent, TemporaryLimit, Updatable, UpdateEvent,
-};
-
-use super::create_default_line;
+use iidm::*;
 
 #[test]
 fn test_update_single_field() {
     let mut line = create_default_line();
-    line.update(LineUpdate {
+    line.update(LineUpdater {
         r: Some(10.0),
         ..Default::default()
     });
@@ -22,7 +18,7 @@ fn test_update_single_field() {
 #[test]
 fn test_update_multiple_fields() {
     let mut line = create_default_line();
-    line.update(LineUpdate {
+    line.update(LineUpdater {
         r: Some(10.0),
         x: Some(20.0),
         g1: Some(1.0),
@@ -40,7 +36,7 @@ fn test_update_multiple_fields() {
 #[test]
 fn test_update_connection_fields() {
     let mut line = create_default_line();
-    line.update(LineUpdate {
+    line.update(LineUpdater {
         voltage_level_id1: Some("NEW_VL1".to_string()),
         bus1: Some("NEW_BUS1".to_string()),
         connectable_bus1: Some("NEW_CBUS1".to_string()),
@@ -65,7 +61,7 @@ fn test_update_current_limits() {
         }],
     };
 
-    line.update(LineUpdate {
+    line.update(LineUpdater {
         current_limits1: Some(Some(new_limits)),
         ..Default::default()
     });
@@ -83,7 +79,7 @@ fn test_update_current_limits() {
 fn test_update_remove_current_limits() {
     let mut line = create_default_line();
     // Add
-    line.update(LineUpdate {
+    line.update(LineUpdater {
         current_limits1: Some(Some(CurrentLimits {
             permanent_limit: 1000.0,
             temporary_limits: vec![],
@@ -92,7 +88,7 @@ fn test_update_remove_current_limits() {
     });
 
     // And remove
-    line.update(LineUpdate {
+    line.update(LineUpdater {
         current_limits1: Some(None),
         ..Default::default()
     });
@@ -105,7 +101,7 @@ fn test_update_with_empty_update() {
     let mut line = create_default_line();
     let original = create_default_line();
 
-    line.update(LineUpdate::default());
+    line.update(LineUpdater::default());
 
     assert_eq!(
         serde_json::to_value(&line).unwrap(),
@@ -165,7 +161,7 @@ fn test_handle_line_update() {
     assert_eq!(line.b1, 4.0);
 
     // Init a update
-    let line_update = LineUpdate {
+    let line_update = LineUpdater {
         r: Some(10.0),
         x: Some(20.0),
         g1: Some(30.0),
@@ -237,21 +233,21 @@ fn test_multiple_line_updates() {
 
     // List of updates
     let updates = vec![
-        LineUpdate {
+        LineUpdater {
             r: Some(10.0),
             x: Some(20.0),
             g1: Some(30.0),
             b1: Some(40.0),
             ..Default::default()
         },
-        LineUpdate {
+        LineUpdater {
             r: Some(11.0),
             x: Some(21.0),
             g1: Some(31.0),
             b1: Some(41.0),
             ..Default::default()
         },
-        LineUpdate {
+        LineUpdater {
             r: Some(12.0),
             x: Some(22.0),
             g1: Some(32.0),

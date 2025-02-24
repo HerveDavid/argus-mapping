@@ -1,11 +1,11 @@
-use iidm::TemporaryLimitUpdate;
+use iidm::TemporaryLimitUpdater;
 use serde::{de::Error, Deserialize, Serialize};
 use serde_json::Value;
 
 #[test]
 fn test_update_from_bad_json_updater() {
     let json = r#"{"nam": "coucou"}"#; // Incorrecte key
-    let validation = TemporaryLimitUpdate::validate_json(json);
+    let validation = TemporaryLimitUpdater::validate_json(json);
     assert!(
         validation.is_err(),
         "La validation devrait échouer avec une clé incorrecte"
@@ -15,7 +15,7 @@ fn test_update_from_bad_json_updater() {
 #[test]
 fn test_update_from_good_json_updater() {
     let json = r#"{"name": "coucou"}"#;
-    let validation = TemporaryLimitUpdate::validate_json(json);
+    let validation = TemporaryLimitUpdater::validate_json(json);
 
     assert!(
         validation.is_ok(),
@@ -30,7 +30,7 @@ fn test_update_from_good_json_updater() {
 #[test]
 fn test_update_from_missing_json_updater() {
     let json = r#"{"name": "coucou"}"#;
-    let validation = TemporaryLimitUpdate::validate_json(json);
+    let validation = TemporaryLimitUpdater::validate_json(json);
     assert!(validation.is_ok());
     if let Ok(validated) = validation {
         assert!(validated.value.is_none(), "La valeur devrait être None");
@@ -40,7 +40,7 @@ fn test_update_from_missing_json_updater() {
 #[test]
 fn test_update_from_null_json_updater() {
     let json = r#"{"name": "coucou", "value": null}"#;
-    let validation = TemporaryLimitUpdate::validate_json(json);
+    let validation = TemporaryLimitUpdater::validate_json(json);
     assert!(validation.is_ok());
     if let Ok(validated) = validation {
         assert!(validated.value.is_none(), "La valeur devrait être None");
@@ -80,7 +80,7 @@ pub trait JsonSchema: Sized {
     fn validate_json(json: &str) -> Result<Self, serde_json::Error>;
 }
 
-impl JsonSchema for TemporaryLimitUpdate {
+impl JsonSchema for TemporaryLimitUpdater {
     fn fields_json() -> Vec<String> {
         vec![
             "name".to_string(),

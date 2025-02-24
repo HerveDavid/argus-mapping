@@ -6,7 +6,7 @@ use std::str::FromStr;
 #[test]
 fn test_update_basic_fields() {
     let mut network = create_default_network();
-    network.update(NetworkUpdate {
+    network.update(NetworkUpdater {
         case_date: Some(DateTime::from_str("2024-02-21T10:00:00.000+01:00").unwrap()),
         forecast_distance: Some(1),
         source_format: Some("updated".to_string()),
@@ -31,7 +31,7 @@ fn test_update_with_empty_update() {
     let mut network = create_default_network();
     let original = create_default_network();
 
-    network.update(NetworkUpdate::default());
+    network.update(NetworkUpdater::default());
 
     assert_eq!(
         serde_json::to_value(&network).unwrap(),
