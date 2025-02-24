@@ -3,18 +3,20 @@ use serde::{de::Error, Deserialize, Serialize};
 use serde_json::Value;
 
 #[test]
-fn test_update_from_updater() {
-    // Test 1: JSON mal formé (devrait échouer)
-    let json = r#"{"nam": "coucou"}"#; // Clé incorrecte
+fn test_update_from_bad_json_updater() {
+    let json = r#"{"nam": "coucou"}"#; // Incorrecte key
     let validation = TemporaryLimitUpdate::validate_json(json);
     assert!(
         validation.is_err(),
         "La validation devrait échouer avec une clé incorrecte"
     );
+}
 
-    // Test 2: JSON bien formé
+#[test]
+fn test_update_from_good_json_updater() {
     let json = r#"{"name": "coucou"}"#;
     let validation = TemporaryLimitUpdate::validate_json(json);
+
     assert!(
         validation.is_ok(),
         "La validation devrait réussir avec un JSON valide"
@@ -23,8 +25,20 @@ fn test_update_from_updater() {
     if let Ok(validated) = validation {
         assert_eq!(validated.name.unwrap(), "coucou");
     }
+}
 
-    // Test 3: Test avec des champs manquants
+#[test]
+fn test_update_from_missing_json_updater() {
+    let json = r#"{"name": "coucou"}"#;
+    let validation = TemporaryLimitUpdate::validate_json(json);
+    assert!(validation.is_ok());
+    if let Ok(validated) = validation {
+        assert!(validated.value.is_none(), "La valeur devrait être None");
+    }
+}
+
+#[test]
+fn test_update_from_null_json_updater() {
     let json = r#"{"name": "coucou", "value": null}"#;
     let validation = TemporaryLimitUpdate::validate_json(json);
     assert!(validation.is_ok());
@@ -45,7 +59,7 @@ where
         .ok_or_else(|| serde_json::Error::custom("JSON input must be an object"))?;
 
     // Vérification des champs attendus
-    let schema = T::schema_json();
+    let schema = T::fields_json();
     for field in obj.keys() {
         if !schema.contains(field) {
             return Err(serde_json::Error::custom(format!(
@@ -62,12 +76,12 @@ where
 
 // Implémentation du trait pour définir le schéma JSON attendu
 pub trait JsonSchema: Sized {
-    fn schema_json() -> Vec<String>;
+    fn fields_json() -> Vec<String>;
     fn validate_json(json: &str) -> Result<Self, serde_json::Error>;
 }
 
 impl JsonSchema for TemporaryLimitUpdate {
-    fn schema_json() -> Vec<String> {
+    fn fields_json() -> Vec<String> {
         vec![
             "name".to_string(),
             "acceptable_duration".to_string(),
