@@ -1,4 +1,4 @@
-use iidm::TemporaryLimitUpdater;
+use iidm::{TemporaryLimitError, TemporaryLimitUpdater};
 use serde::{de::Error, Deserialize, Serialize};
 use serde_json::Value;
 
@@ -76,11 +76,15 @@ where
 
 // Implémentation du trait pour définir le schéma JSON attendu
 pub trait JsonSchema: Sized {
+    type Err;
+
     fn fields_json() -> Vec<String>;
-    fn validate_json(json: &str) -> Result<Self, serde_json::Error>;
+    fn validate_json(json: &str) -> Result<Self, Self::Err>;
 }
 
 impl JsonSchema for TemporaryLimitUpdater {
+    type Err = TemporaryLimitError;
+
     fn fields_json() -> Vec<String> {
         vec![
             "name".to_string(),
@@ -89,7 +93,7 @@ impl JsonSchema for TemporaryLimitUpdater {
         ]
     }
 
-    fn validate_json(json: &str) -> Result<Self, serde_json::Error> {
-        validate_json(json)
+    fn validate_json(json: &str) -> Result<Self, Self::Err> {
+        validate_json(json).map_err(|e| TemporaryLimitError::Deserialization(e))
     }
 }

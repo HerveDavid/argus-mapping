@@ -52,8 +52,8 @@ pub fn impl_error_for_struct(ast: &DeriveInput) -> TokenStream {
         pub enum #error_ident {
             #(#error_variants,)*
 
-            #[error("Serialization error: {0}")]
-            Serialization(#[from] serde_json::Error),
+            #[error("Deserialization error: {0}")]
+            Deserialization(#[from] serde_json::Error),
 
             #[error("Date parsing error: {0}")]
             DateParse(#[from] chrono::ParseError),
@@ -131,7 +131,7 @@ pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
 
             fn update_from_json(&mut self, json: &str) -> Result<(), Self::Err> {
                 serde_json::from_str(json)
-                    .map_err(|e| Self::Err::Serialization(e))
+                    .map_err(|e| Self::Err::Deserialization(e))
                     .and_then(|updates| {
                         self.update(updates);
                         Ok(())
