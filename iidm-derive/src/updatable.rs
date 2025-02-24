@@ -96,6 +96,36 @@ pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
             }
         });
 
+    // Generate fields_json implementation by getting all field names with serde renames
+    let fields_json_impl = fields
+        .iter()
+        .filter(|f| f.ident.as_ref().map_or(true, |id| id != "id"))
+        .map(|f| {
+            let field_name = f.ident.as_ref().unwrap().to_string();
+
+            // Get the serde rename attribute if it exists
+            let rename = f
+                .attrs
+                .iter()
+                .find(|attr| attr.path().is_ident("serde"))
+                .and_then(|attr| {
+                    let mut rename_value = None;
+                    attr.parse_nested_meta(|meta| {
+                        if meta.path.is_ident("rename") {
+                            rename_value = Some(meta.value()?.parse::<LitStr>()?.value());
+                        }
+                        Ok(())
+                    })
+                    .ok();
+                    rename_value
+                })
+                .unwrap_or_else(|| field_name.clone());
+
+            quote::quote! {
+                #rename.to_string()
+            }
+        });
+
     let update_impl = fields
         .iter()
         .filter(|f| f.ident.as_ref().map_or(true, |id| id != "id"))
@@ -120,21 +150,19 @@ pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
             #(#field_defs,)*
         }
 
-        // impl JsonSchema for #update_name {
-        //     type Err = #error_name;
+        impl crate::extensions::JsonSchema for #update_name {
+            type Err = #error_name;
 
-        //     fn fields_json() -> Vec<String> {
-        //         vec![
-        //             "name".to_string(),
-        //             "acceptableDuration".to_string(),
-        //             "value".to_string(),
-        //         ]
-        //     }
+            fn fields_json() -> Vec<String> {
+                vec![
+                    #(#fields_json_impl,)*
+                ]
+            }
 
-        //     fn validate_json(json: &str) -> Result<Self, Self::Err> {
-        //         crate::libs::json::validate_json(json).map_err(|e| Self::Err::Deserialization(e))
-        //     }
-        // }
+            fn validate_json(json: &str) -> Result<Self, Self::Err> {
+                crate::libs::json::validate_json(json).map_err(|e| Self::Err::Deserialization(e))
+            }
+        }
 
         impl Updatable for #name {
 
