@@ -4,12 +4,22 @@ use serde_json::Value;
 
 #[test]
 fn test_update_from_bad_json_updater() {
-    let json = r#"{"nam": "coucou"}"#; // Incorrecte key
+    let json = r#"{"nam": "coucou"}"#; // Incorrect key
     let validation = TemporaryLimitUpdater::validate_json(json);
     assert!(
         validation.is_err(),
-        "La validation devrait échouer avec une clé incorrecte"
+        "Validation should fail with an incorrect key"
     );
+    match validation.err().unwrap() {
+        TemporaryLimitError::Deserialization(error) => {
+            assert!(
+                error.to_string().contains("Unexpected field"),
+                "Error should indicate an unexpected field issue: {}",
+                error
+            );
+        }
+        _ => panic!("Expected a Deserialization error"),
+    }
 }
 
 #[test]
@@ -19,7 +29,7 @@ fn test_update_from_good_json_updater() {
 
     assert!(
         validation.is_ok(),
-        "La validation devrait réussir avec un JSON valide"
+        "Validation should sucess with a JSON valid"
     );
 
     if let Ok(validated) = validation {
@@ -33,7 +43,7 @@ fn test_update_from_missing_json_updater() {
     let validation = TemporaryLimitUpdater::validate_json(json);
     assert!(validation.is_ok());
     if let Ok(validated) = validation {
-        assert!(validated.value.is_none(), "La valeur devrait être None");
+        assert!(validated.value.is_none(), "Value should be None");
     }
 }
 
@@ -43,7 +53,7 @@ fn test_update_from_null_json_updater() {
     let validation = TemporaryLimitUpdater::validate_json(json);
     assert!(validation.is_ok());
     if let Ok(validated) = validation {
-        assert!(validated.value.is_none(), "La valeur devrait être None");
+        assert!(validated.value.is_none(), "Value should be None");
     }
 }
 
@@ -75,7 +85,7 @@ where
 }
 
 // Implémentation du trait pour définir le schéma JSON attendu
-pub trait JsonSchema: Sized {
+pub trait JsonSchema: for<'de> Deserialize<'de> {
     type Err;
 
     fn fields_json() -> Vec<String>;

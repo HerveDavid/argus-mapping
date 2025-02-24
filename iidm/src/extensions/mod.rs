@@ -15,3 +15,10 @@ pub trait Updatable: Sized + Serialize + for<'de> Deserialize<'de> {
     fn update(&mut self, updates: Self::Updater);
     fn update_from_json(&mut self, json: &str) -> Result<(), Self::Err>;
 }
+
+// pub trait JsonSchema: Sized {
+//     type Err;
+
+//     fn fields_json() -> Vec<String>;
+//     fn validate_json(json: &str) -> Result<Self, Self::Err>;
+// }
