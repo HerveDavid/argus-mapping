@@ -98,7 +98,7 @@ impl JsonSchema for TemporaryLimitUpdater {
     fn fields_json() -> Vec<String> {
         vec![
             "name".to_string(),
-            "acceptable_duration".to_string(),
+            "acceptableDuration".to_string(),
             "value".to_string(),
         ]
     }
