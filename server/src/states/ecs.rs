@@ -31,16 +31,32 @@ macro_rules! init_identifiable_components {
 
 macro_rules! init_updatable_components {
     ($($component:ty),* $(,)?) => {
-        fn init_updatable_components(world: &mut World, schedule: &mut Schedule) {
-            $(
+        fn init_updatable_components(world: &mut World, schedule: &mut Schedule, updater: &mut UpdateRegistry) {
+             $(
                 // Static verification that the type implements Updatable
                 assert_updatable::<$component>();
-
                 // Static verification that the type is a valid component
                 assert_component::<$component>();
-
                 world.init_resource::<Events<UpdateEvent<$component>>>();
                 schedule.add_systems(handle_update_events::<$component>);
+
+                // Register component type with update registry
+                // Converting PascalCase to snake_case for component name
+                let component_name = stringify!($component)
+                    .chars()
+                    .enumerate()
+                    .fold(String::new(), |mut acc, (i, c)| {
+                        if i > 0 && c.is_uppercase() {
+                            acc.push('_');
+                            acc.push(c.to_lowercase().next().unwrap());
+                        } else {
+                            acc.push(c.to_lowercase().next().unwrap());
+                        }
+                        acc
+                    });
+
+                // Register component type with its corresponding updater and error types
+                updater.register::<$component, paste::paste! {[<$component Updater>]}, paste::paste! {[<$component Error>]}>(&component_name);
             )*
         }
     };
@@ -118,11 +134,9 @@ impl Default for EcsState {
         let mut update_registry = UpdateRegistry::default();
         world.init_resource::<AssetRegistry>();
 
-        update_registry.register::<Network, NetworkUpdater, NetworkError>("network");
-
         // Init Resources and Systems
         init_identifiable_component(&mut world, &mut schedule);
-        init_updatable_components(&mut world, &mut schedule);
+        init_updatable_components(&mut world, &mut schedule, &mut update_registry);
 
         // Init Errors handler
         world.insert_resource(Events::<EntityNotFoundEvent>::default());

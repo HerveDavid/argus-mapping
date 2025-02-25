@@ -30,7 +30,7 @@ pub enum UpdateError {
     #[error("Invalid network data: {0}")]
     ValidationError(String),
 
-    #[error("Component not found: {0}")]
+    #[error("{0}")]
     NotFoundError(String),
 
     #[error("Internal server error: {0}")]
