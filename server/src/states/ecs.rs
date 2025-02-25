@@ -115,6 +115,9 @@ impl Default for EcsState {
         init_identifiable_component(&mut world, &mut schedule);
         init_updatable_components(&mut world, &mut schedule);
 
+        // Init Errors handler
+        world.insert_resource(Events::<EntityNotFoundEvent>::default());
+
         Self {
             world: RwLock::new(world),
             schedule: RwLock::new(schedule),

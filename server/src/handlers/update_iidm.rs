@@ -5,7 +5,7 @@ use axum::{
     Json,
 };
 use bevy_ecs::event::Events;
-use iidm::{JsonSchema, Network, NetworkUpdater, Updatable, UpdateEvent};
+use iidm::{EntityNotFoundEvent, ErrorType, JsonSchema, Updatable, UpdateEvent};
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, sync::Arc};
 use thiserror::Error;
@@ -32,9 +32,6 @@ pub enum UpdateError {
     #[error("Invalid network data: {0}")]
     ValidationError(String),
 
-    #[error("Failed to acquire lock: {0}")]
-    LockError(String),
-
     #[error("Component not found: {0}")]
     NotFoundError(String),
 
@@ -49,9 +46,7 @@ impl IntoResponse for UpdateError {
                 StatusCode::BAD_REQUEST
             }
             UpdateError::NotFoundError(_) => StatusCode::NOT_FOUND,
-            UpdateError::LockError(_) | UpdateError::InternalError(_) => {
-                StatusCode::INTERNAL_SERVER_ERROR
-            }
+            UpdateError::InternalError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         let body = Json(RegisterResponse {
@@ -118,6 +113,29 @@ where
 
             // Run the schedule to process the event
             schedule.run(&mut world);
+
+            // Check if any error events were generated
+            let error_events = world.resource_mut::<Events<EntityNotFoundEvent>>();
+            let mut error_reader = error_events.get_cursor();
+
+            for error in error_reader.read(&error_events) {
+                if error.id == id {
+                    match error.error_type {
+                        ErrorType::EntityNotFound => {
+                            return Err(UpdateError::NotFoundError(format!(
+                                "Entity with ID '{}' not found",
+                                id
+                            )));
+                        }
+                        ErrorType::ComponentNotFound => {
+                            return Err(UpdateError::NotFoundError(format!(
+                                "Component of type '{}' not found on entity with ID '{}'",
+                                error.component_type, id
+                            )));
+                        }
+                    }
+                }
+            }
 
             debug!("Successfully updated component: {}", id);
             Ok(())

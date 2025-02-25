@@ -12,8 +12,22 @@ where
     pub update: T::Updater,
 }
 
+#[derive(Event, Debug, Clone)]
+pub struct EntityNotFoundEvent {
+    pub id: String,
+    pub error_type: ErrorType,
+    pub component_type: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ErrorType {
+    EntityNotFound,
+    ComponentNotFound,
+}
+
 pub fn handle_update_events<T: Component + Updatable>(
     mut update_events: EventReader<UpdateEvent<T>>,
+    mut error_events: EventWriter<EntityNotFoundEvent>,
     registery: Res<AssetRegistry>,
     mut query: Query<&mut T>,
 ) where
@@ -21,9 +35,29 @@ pub fn handle_update_events<T: Component + Updatable>(
     T::Updater: Send + Sync + Clone,
 {
     for UpdateEvent { id, update } in update_events.read() {
-        if let Some(entity) = registery.find(id) {
-            if let Ok(mut component) = query.get_mut(entity) {
-                component.update(update.clone());
+        match registery.find(id) {
+            Some(entity) => {
+                match query.get_mut(entity) {
+                    Ok(mut component) => {
+                        component.update(update.clone());
+                    }
+                    Err(_) => {
+                        // Component exists but has wrong type
+                        error_events.send(EntityNotFoundEvent {
+                            id: id.clone(),
+                            error_type: ErrorType::ComponentNotFound,
+                            component_type: std::any::type_name::<T>().to_string(),
+                        });
+                    }
+                }
+            }
+            None => {
+                // Entity with this ID doesn't exist
+                error_events.send(EntityNotFoundEvent {
+                    id: id.clone(),
+                    error_type: ErrorType::EntityNotFound,
+                    component_type: std::any::type_name::<T>().to_string(),
+                });
             }
         }
     }
