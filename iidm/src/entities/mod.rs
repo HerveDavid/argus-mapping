@@ -98,6 +98,15 @@ pub enum TopologyKind {
     BusBreaker,
 }
 
+impl std::fmt::Display for TopologyKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TopologyKind::NodeBreaker => write!(f, "NodeBreaker"),
+            TopologyKind::BusBreaker => write!(f, "BusBreaker"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Component, JsonSchema)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum EnergySource {
@@ -192,6 +201,16 @@ pub enum LoadType {
     Undefined,
     Auxiliary,
     Fictitious,
+}
+
+impl std::fmt::Display for LoadType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LoadType::Undefined => write!(f, "Undefined"),
+            LoadType::Auxiliary => write!(f, "Auxililary"),
+            LoadType::Fictitious => write!(f, "Fictitious"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable, JsonSchema)]
@@ -386,11 +405,30 @@ pub enum PhaseRegulationMode {
     FixedTap,
 }
 
+impl std::fmt::Display for PhaseRegulationMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PhaseRegulationMode::CurrentLimiter => write!(f, "CurrentLimiter"),
+            PhaseRegulationMode::ActivePowerControl => write!(f, "ActivePowerControl"),
+            PhaseRegulationMode::FixedTap => write!(f, "FixedTap"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RatioRegulationMode {
     Voltage,
     ReactivePower,
+}
+
+impl std::fmt::Display for RatioRegulationMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RatioRegulationMode::Voltage => write!(f, "Voltage"),
+            RatioRegulationMode::ReactivePower => write!(f, "ReactivePower"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable, JsonSchema)]
@@ -438,6 +476,16 @@ pub enum SwitchKind {
     LoadBreakSwitch,
 }
 
+impl std::fmt::Display for SwitchKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SwitchKind::Breaker => write!(f, "Breaker"),
+            SwitchKind::Disconnector => write!(f, "Voltage"),
+            SwitchKind::LoadBreakSwitch => write!(f, "LoadBreakSwitch "),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable, JsonSchema)]
 pub struct ShuntCompensator {
     pub id: String,
@@ -476,6 +524,16 @@ pub enum StaticVarCompensatorRegulationMode {
     Voltage,
     ReactivePower,
     Off,
+}
+
+impl std::fmt::Display for StaticVarCompensatorRegulationMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StaticVarCompensatorRegulationMode::Voltage => write!(f, "Voltage"),
+            StaticVarCompensatorRegulationMode::ReactivePower => write!(f, "ReactivePower"),
+            StaticVarCompensatorRegulationMode::Off => write!(f, "Off"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable, JsonSchema)]
@@ -546,6 +604,19 @@ pub enum ConvertersMode {
     Side1InverterSide2Rectifier,
 }
 
+impl std::fmt::Display for ConvertersMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConvertersMode::Side1RectifierSide2Inverter => {
+                write!(f, "Side1RectifierSide2Inverter")
+            }
+            ConvertersMode::Side1InverterSide2Rectifier => {
+                write!(f, "Side1InverterSide2Rectifier ")
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable, JsonSchema)]
 pub struct TerminalRef {
     pub id: String,
@@ -593,4 +664,14 @@ pub enum Side {
     One,
     Two,
     Three,
+}
+
+impl std::fmt::Display for Side {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Side::One => write!(f, "One"),
+            Side::Two => write!(f, "Two"),
+            Side::Three => write!(f, "Three"),
+        }
+    }
 }
