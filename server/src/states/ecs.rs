@@ -1,6 +1,11 @@
+mod update_registry;
+
+pub use update_registry::dispatch_update;
+
 use bevy_ecs::{event::Events, schedule::Schedule, world::World};
 use iidm::*;
 use tokio::sync::RwLock;
+use update_registry::UpdateRegistry;
 
 trait ComponentInit: 'static + Send + Sync {}
 impl<T: 'static + Send + Sync> ComponentInit for T {}
@@ -102,6 +107,7 @@ init_updatable_components!(
 pub struct EcsState {
     pub world: RwLock<World>,
     pub schedule: RwLock<Schedule>,
+    pub update_registry: RwLock<UpdateRegistry>,
 }
 
 impl Default for EcsState {
@@ -109,7 +115,12 @@ impl Default for EcsState {
         // Init world
         let mut world = World::default();
         let mut schedule = Schedule::default();
+
+        // Init registry
+        let mut update_registry = UpdateRegistry::default();
         world.init_resource::<AssetRegistry>();
+
+        update_registry.register::<Network, NetworkUpdater, NetworkError>("network");
 
         // Init Resources and Systems
         init_identifiable_component(&mut world, &mut schedule);
@@ -121,6 +132,7 @@ impl Default for EcsState {
         Self {
             world: RwLock::new(world),
             schedule: RwLock::new(schedule),
+            update_registry: RwLock::new(update_registry),
         }
     }
 }

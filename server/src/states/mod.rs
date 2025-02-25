@@ -1,9 +1,8 @@
-mod ecs;
+pub mod ecs;
 
-use ecs::EcsState;
 use tokio::sync::RwLock;
 
 #[derive(Default)]
 pub struct AppState {
-    pub ecs: RwLock<EcsState>,
+    pub ecs: RwLock<ecs::EcsState>,
 }

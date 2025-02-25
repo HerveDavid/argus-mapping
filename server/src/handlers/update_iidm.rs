@@ -64,7 +64,6 @@ pub async fn update_iidm<C, U, E>(
 where
     C: Updatable<Updater = U, Err = E> + 'static,
     U: JsonSchema + Send + Sync + 'static,
-    E: Display,
     U::Err: Display,
 {
     debug!("Received update request for component ID: {}", payload.id);
@@ -86,7 +85,6 @@ async fn update_component<C, U, E>(
 where
     C: Updatable<Updater = U, Err = E> + 'static,
     U: JsonSchema + Send + Sync + 'static,
-    E: Display,
     U::Err: Display,
 {
     let ecs = state.ecs.read().await;
