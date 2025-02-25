@@ -9,7 +9,7 @@ use iidm::{EntityNotFoundEvent, ErrorType, JsonSchema, Updatable, UpdateEvent};
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, sync::Arc};
 use thiserror::Error;
-use tracing::{debug, error, instrument};
+use tracing::{debug, error};
 
 use crate::states::AppState;
 
@@ -57,7 +57,6 @@ impl IntoResponse for UpdateError {
     }
 }
 
-#[instrument(skip(state, payload), fields(id = %payload.id))]
 pub async fn update_iidm<C, U, E>(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<RegisterRequest>,
@@ -95,6 +94,25 @@ where
     let mut world = ecs.world.write().await;
     let mut schedule = ecs.schedule.write().await;
     let id = payload.id.clone();
+
+    // Critical verifications
+    if !world.contains_resource::<Events<UpdateEvent<C>>>() {
+        error!(
+            "Events<UpdateEvent<{}>> not initialized",
+            std::any::type_name::<C>()
+        );
+        return Err(UpdateError::InternalError(format!(
+            "Event system for {} not initialized",
+            std::any::type_name::<C>()
+        )));
+    }
+
+    if !world.contains_resource::<Events<EntityNotFoundEvent>>() {
+        error!("Events<EntityNotFoundEvent> not initialized");
+        return Err(UpdateError::InternalError(
+            "Error errors system not initialized".to_string(),
+        ));
+    }
 
     // Convert the component JSON to a string
     let json_str = serde_json::to_string(&payload.component)?;
