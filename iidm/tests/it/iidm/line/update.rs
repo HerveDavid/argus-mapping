@@ -116,6 +116,7 @@ fn test_handle_line_update() {
     let mut schedule = Schedule::default();
 
     // Init Resources and Systems
+    world.init_resource::<Events<EntityNotFoundEvent>>();
     world.init_resource::<Events<RegisterEvent<Line>>>();
     world.init_resource::<Events<UpdateEvent<Line>>>();
     world.init_resource::<AssetRegistry>();
@@ -196,6 +197,7 @@ fn test_multiple_line_updates() {
     let mut schedule = Schedule::default();
 
     // Init Resources and Systems
+    world.init_resource::<Events<EntityNotFoundEvent>>();
     world.init_resource::<Events<RegisterEvent<Line>>>();
     world.init_resource::<Events<UpdateEvent<Line>>>();
     world.init_resource::<AssetRegistry>();

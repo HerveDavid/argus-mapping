@@ -90,13 +90,32 @@ where
     U: JsonSchema + Send + Sync + 'static,
     U::Err: Display,
 {
+    // Acquire locks and prepare state
     let ecs = state.ecs.read().await;
-
     let mut world = ecs.world.write().await;
     let mut schedule = ecs.schedule.write().await;
     let id = payload.id.clone();
 
-    // Critical verifications
+    // Verify required resources exist
+    verify_resources::<C>(&world)?;
+
+    // Parse and validate the JSON
+    let json_str = serde_json::to_string(&payload.component)?;
+    let update = parse_and_validate_json::<U>(&json_str)?;
+
+    // Process the update
+    process_update::<C, U, E>(&mut world, &mut schedule, &id, update)?;
+
+    tracing::debug!("Successfully updated component: {}", id);
+    Ok(())
+}
+
+// Helper function to verify resources
+fn verify_resources<C>(world: &bevy_ecs::world::World) -> Result<(), UpdateError>
+where
+    C: Updatable + 'static,
+{
+    // Check for UpdateEvent resource
     if !world.contains_resource::<Events<UpdateEvent<C>>>() {
         tracing::error!(
             "Events<UpdateEvent<{}>> not initialized",
@@ -108,6 +127,7 @@ where
         )));
     }
 
+    // Check for EntityNotFoundEvent resource
     if !world.contains_resource::<Events<EntityNotFoundEvent>>() {
         tracing::error!("Events<EntityNotFoundEvent> not initialized");
         return Err(UpdateError::InternalError(
@@ -115,55 +135,162 @@ where
         ));
     }
 
-    // Convert the component JSON to a string
-    let json_str = serde_json::to_string(&payload.component)?;
+    Ok(())
+}
 
-    // Validate the JSON against the component schema
-    let update =
-        U::validate_json(&json_str).map_err(|e| UpdateError::ValidationError(e.to_string()))?;
+// Helper function to parse and validate JSON
+fn parse_and_validate_json<U>(json_str: &str) -> Result<U, UpdateError>
+where
+    U: JsonSchema + Send + Sync,
+    U::Err: Display,
+{
+    U::validate_json(json_str).map_err(|e| UpdateError::ValidationError(e.to_string()))
+}
 
-    // Send the update event
-    match world.get_resource_mut::<Events<UpdateEvent<C>>>() {
-        Some(mut event_writer) => {
-            event_writer.send(UpdateEvent {
-                id: id.clone(),
-                update,
-            });
+// Helper function to process the update
+fn process_update<C, U, E>(
+    world: &mut bevy_ecs::world::World,
+    schedule: &mut bevy_ecs::schedule::Schedule,
+    id: &str,
+    update: U,
+) -> Result<(), UpdateError>
+where
+    C: Updatable<Updater = U, Err = E> + 'static,
+    U: Send + Sync + 'static,
+{
+    // Get event writer
+    let mut event_writer = world
+        .get_resource_mut::<Events<UpdateEvent<C>>>()
+        .ok_or_else(|| UpdateError::InternalError("Event system not initialized".to_string()))?;
 
-            // Run the schedule to process the event
-            schedule.run(&mut world);
+    // Send update event
+    event_writer.send(UpdateEvent {
+        id: id.to_string(),
+        update,
+    });
 
-            // Check if any error events were generated
-            let error_events = world.resource_mut::<Events<EntityNotFoundEvent>>();
-            let mut error_reader = error_events.get_cursor();
+    // Run the schedule to process the event
+    schedule.run(world);
 
-            for error in error_reader.read(&error_events) {
-                if error.id == id {
-                    match error.error_type {
-                        ErrorType::EntityNotFound => {
-                            return Err(UpdateError::NotFoundError(format!(
-                                "Entity with ID '{}' not found",
-                                id
-                            )));
-                        }
-                        ErrorType::ComponentNotFound => {
-                            return Err(UpdateError::NotFoundError(format!(
-                                "Component of type '{}' not found on entity with ID '{}'",
-                                error.component_type, id
-                            )));
-                        }
-                    }
+    // Check for errors
+    check_for_errors(world, id)
+}
+
+// Helper function to check for errors after update
+fn check_for_errors(world: &bevy_ecs::world::World, id: &str) -> Result<(), UpdateError> {
+    let error_events = world.resource::<Events<EntityNotFoundEvent>>();
+    let mut error_reader = error_events.get_cursor();
+
+    for error in error_reader.read(error_events) {
+        if error.id == id {
+            match error.error_type {
+                ErrorType::EntityNotFound => {
+                    return Err(UpdateError::NotFoundError(format!(
+                        "Entity with ID '{}' not found",
+                        id
+                    )));
+                }
+                ErrorType::ComponentNotFound => {
+                    return Err(UpdateError::NotFoundError(format!(
+                        "Component of type '{}' not found on entity with ID '{}'",
+                        error.component_type, id
+                    )));
                 }
             }
+        }
+    }
 
-            tracing::debug!("Successfully updated component: {}", id);
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy_ecs::world::World;
+    use serde::{Deserialize, Serialize};
+
+    // Mock types for testing
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    struct MockComponent;
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    struct MockUpdater;
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    struct MockError;
+
+    impl Display for MockError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "Mock error")
+        }
+    }
+
+    impl Updatable for MockComponent {
+        type Updater = MockUpdater;
+        type Err = MockError;
+
+        fn update(&mut self, _updates: Self::Updater) {
+            // Mock implementation
+        }
+
+        fn update_from_json(&mut self, _json: &str) -> Result<(), Self::Err> {
+            // Mock implementation
             Ok(())
         }
-        None => {
-            tracing::error!("Events resource not found");
-            Err(UpdateError::InternalError(
-                "Event system not initialized".to_string(),
-            ))
+    }
+
+    impl JsonSchema for MockUpdater {
+        type Err = String;
+
+        fn validate_json(json: &str) -> Result<Self, Self::Err> {
+            if json.contains("valid") {
+                Ok(MockUpdater)
+            } else {
+                Err("Invalid JSON".to_string())
+            }
         }
+
+        fn fields_json() -> Vec<String> {
+            vec![]
+        }
+    }
+
+    #[test]
+    fn test_verify_resources() {
+        let mut world = World::new();
+
+        // Test with missing resources
+        let result = verify_resources::<MockComponent>(&world);
+        assert!(result.is_err());
+
+        // Add required resources
+        world.insert_resource(Events::<UpdateEvent<MockComponent>>::default());
+        world.insert_resource(Events::<EntityNotFoundEvent>::default());
+
+        // Test with all resources present
+        let result = verify_resources::<MockComponent>(&world);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_check_for_errors() {
+        let mut world = World::new();
+        world.insert_resource(Events::<EntityNotFoundEvent>::default());
+
+        // Test with no errors
+        let result = check_for_errors(&world, "test_id");
+        assert!(result.is_ok());
+
+        // Add an error event
+        let mut error_events = world.resource_mut::<Events<EntityNotFoundEvent>>();
+        error_events.send(EntityNotFoundEvent {
+            id: "test_id".to_string(),
+            error_type: ErrorType::EntityNotFound,
+            component_type: "MockComponent".to_string(),
+        });
+
+        // Test with an error
+        let result = check_for_errors(&world, "test_id");
+        assert!(result.is_err());
     }
 }
