@@ -59,7 +59,7 @@ impl UpdateRegistry {
 }
 
 // Dispatcher function
-pub async fn dispatch_update(
+pub async fn update_iidm_by_component(
     Path(component_type): Path<String>,
     state: State<Arc<AppState>>,
     payload: Json<RegisterRequest>,

@@ -6,7 +6,7 @@ use axum::{
     Router,
 };
 use handlers::{index, upload_iidm};
-use states::{ecs, AppState};
+use states::{ecs::update_iidm_by_component, AppState};
 use std::{path::PathBuf, sync::Arc};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -28,7 +28,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(index))
         .route("/upload", post(upload_iidm))
-        .route("/update/{component_type}", post(ecs::dispatch_update))
+        .route("/update/{component_type}", post(update_iidm_by_component))
         .nest_service("/static", get_service(ServeDir::new(static_path)))
         .layer(TraceLayer::new_for_http())
         .with_state(Arc::new(AppState::default()));

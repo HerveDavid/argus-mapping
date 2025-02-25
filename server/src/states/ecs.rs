@@ -1,6 +1,6 @@
 mod update_registry;
 
-pub use update_registry::dispatch_update;
+pub use update_registry::update_iidm_by_component;
 
 use bevy_ecs::{event::Events, schedule::Schedule, world::World};
 use iidm::*;
