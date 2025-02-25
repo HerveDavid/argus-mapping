@@ -73,7 +73,7 @@ async fn process_upload(multipart: &mut Multipart) -> Result<Network, UploadErro
         if field.name() == Some("iidm_file") {
             let bytes = field.bytes().await.map_err(UploadError::MultipartError)?;
             return serde_json::from_slice(&bytes)
-                .map_err(|e| NetworkError::Serialization(e))
+                .map_err(|e| NetworkError::Deserialization(e))
                 .map_err(UploadError::JsonError);
         }
     }

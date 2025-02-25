@@ -1,6 +1,21 @@
+use super::*;
 use iidm::*;
 
 const NETWORK_FILE: &str = "tests/data/network.json";
+
+#[test]
+fn test_deserialize_from_json() {
+    let network: Network = serde_json::from_str(VALID_NETWORK_JSON).unwrap();
+    assert_default_values(&network);
+}
+
+#[test]
+fn test_serialize_to_json() {
+    let network = create_default_network();
+    let json = serde_json::to_string(&network).unwrap();
+    let deserialized: Network = serde_json::from_str(&json).unwrap();
+    assert_default_values(&deserialized);
+}
 
 #[test]
 fn test_network_basic_properties() -> Result<(), Box<dyn std::error::Error>> {

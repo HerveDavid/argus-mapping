@@ -9,6 +9,7 @@ askama_axum = "0.4.0"
 axum = { version = "0.8.1", features = ["macros", "multipart"] }
 bevy_ecs = { workspace = true }
 iidm = {  path = "../iidm" }
+paste = "1.0.15"
 serde.workspace = true
 serde_json = "1.0.139"
 thiserror = { workspace = true }
