@@ -1,7 +1,15 @@
-use std::sync::Arc;
-
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
+use bevy_ecs::event::Events;
+use iidm::{JsonSchema, Network, NetworkUpdater, Updatable, UpdateEvent};
 use serde::{Deserialize, Serialize};
+use std::{fmt::Display, sync::Arc};
+use thiserror::Error;
+use tracing::{debug, error, instrument};
 
 use crate::states::AppState;
 
@@ -13,35 +21,112 @@ pub struct RegisterRequest {
 
 #[derive(Debug, Serialize)]
 pub struct RegisterResponse {
-    pub id: String,
     pub status: String,
 }
 
-pub async fn update_iidm(
-    State(state): State<Arc<AppState>>,
-    Json(payload): Json<RegisterRequest>,
-) -> impl IntoResponse {
-    match try_update_component(&state, &payload).await {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(RegisterResponse {
-                id: payload.id,
-                status: "Component updated successfully".to_string(),
-            }),
-        ),
-        Err(e) => (
-            StatusCode::BAD_REQUEST,
-            Json(RegisterResponse {
-                id: payload.id,
-                status: format!("Failed to register component: {}", e),
-            }),
-        ),
+#[derive(Debug, Error)]
+pub enum UpdateError {
+    #[error("Failed to parse JSON: {0}")]
+    SerializationError(#[from] serde_json::Error),
+
+    #[error("Invalid network data: {0}")]
+    ValidationError(String),
+
+    #[error("Failed to acquire lock: {0}")]
+    LockError(String),
+
+    #[error("Component not found: {0}")]
+    NotFoundError(String),
+
+    #[error("Internal server error: {0}")]
+    InternalError(String),
+}
+
+impl IntoResponse for UpdateError {
+    fn into_response(self) -> Response {
+        let status = match self {
+            UpdateError::SerializationError(_) | UpdateError::ValidationError(_) => {
+                StatusCode::BAD_REQUEST
+            }
+            UpdateError::NotFoundError(_) => StatusCode::NOT_FOUND,
+            UpdateError::LockError(_) | UpdateError::InternalError(_) => {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
+        };
+
+        let body = Json(RegisterResponse {
+            status: self.to_string(),
+        });
+
+        (status, body).into_response()
     }
 }
 
-async fn try_update_component(
+#[instrument(skip(state, payload), fields(id = %payload.id))]
+pub async fn update_iidm<C, U, E>(
+    State(state): State<Arc<AppState>>,
+    Json(payload): Json<RegisterRequest>,
+) -> Result<impl IntoResponse, UpdateError>
+where
+    C: Updatable<Updater = U, Err = E> + 'static,
+    U: JsonSchema + Send + Sync + 'static,
+    E: Display,
+    U::Err: Display,
+{
+    debug!("Received update request for component ID: {}", payload.id);
+
+    update_component::<C, U, E>(&state, &payload).await?;
+
+    Ok((
+        StatusCode::OK,
+        Json(RegisterResponse {
+            status: "Component updated successfully".to_string(),
+        }),
+    ))
+}
+
+async fn update_component<C, U, E>(
     state: &Arc<AppState>,
     payload: &RegisterRequest,
-) -> Result<(), String> {
-    Err("Could not deserialize component into any known type".to_string())
+) -> Result<(), UpdateError>
+where
+    C: Updatable<Updater = U, Err = E> + 'static,
+    U: JsonSchema + Send + Sync + 'static,
+    E: Display,
+    U::Err: Display,
+{
+    let ecs = state.ecs.read().await;
+
+    let mut world = ecs.world.write().await;
+    let mut schedule = ecs.schedule.write().await;
+    let id = payload.id.clone();
+
+    // Convert the component JSON to a string
+    let json_str = serde_json::to_string(&payload.component)?;
+
+    // Validate the JSON against the component schema
+    let update =
+        U::validate_json(&json_str).map_err(|e| UpdateError::ValidationError(e.to_string()))?;
+
+    // Send the update event
+    match world.get_resource_mut::<Events<UpdateEvent<C>>>() {
+        Some(mut event_writer) => {
+            event_writer.send(UpdateEvent {
+                id: id.clone(),
+                update,
+            });
+
+            // Run the schedule to process the event
+            schedule.run(&mut world);
+
+            debug!("Successfully updated component: {}", id);
+            Ok(())
+        }
+        None => {
+            error!("Events resource not found");
+            Err(UpdateError::InternalError(
+                "Event system not initialized".to_string(),
+            ))
+        }
+    }
 }
