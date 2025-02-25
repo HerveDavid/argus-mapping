@@ -1,15 +1,13 @@
 use axum::{
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
-use bevy_ecs::event::Events;
-use iidm::{EntityNotFoundEvent, ErrorType, JsonSchema, Updatable, UpdateEvent};
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, sync::Arc};
+use std::sync::Arc;
 use thiserror::Error;
-use tracing::{debug, error};
+use tracing::error;
 
 use crate::states::AppState;
 
@@ -56,111 +54,25 @@ impl IntoResponse for UpdateError {
         (status, body).into_response()
     }
 }
-
-pub async fn update_iidm<C, U, E>(
-    State(state): State<Arc<AppState>>,
-    Json(payload): Json<RegisterRequest>,
-) -> Result<impl IntoResponse, UpdateError>
-where
-    C: Updatable<Updater = U, Err = E> + 'static,
-    U: JsonSchema + Send + Sync + 'static,
-    U::Err: Display,
-{
-    debug!("Received update request for component ID: {}", payload.id);
-
-    update_component::<C, U, E>(&state, &payload).await?;
-
-    Ok((
-        StatusCode::OK,
-        Json(RegisterResponse {
-            status: "Component updated successfully".to_string(),
-        }),
-    ))
-}
-
-async fn update_component<C, U, E>(
-    state: &Arc<AppState>,
-    payload: &RegisterRequest,
-) -> Result<(), UpdateError>
-where
-    C: Updatable<Updater = U, Err = E> + 'static,
-    U: JsonSchema + Send + Sync + 'static,
-    U::Err: Display,
-{
+// Dispatcher function
+pub async fn update_iidm(
+    Path(component_type): Path<String>,
+    state: State<Arc<AppState>>,
+    payload: Json<RegisterRequest>,
+) -> Result<Response, UpdateError> {
     let ecs = state.ecs.read().await;
+    let update_registry = ecs.update_registry.read().await;
 
-    let mut world = ecs.world.write().await;
-    let mut schedule = ecs.schedule.write().await;
-    let id = payload.id.clone();
-
-    // Critical verifications
-    if !world.contains_resource::<Events<UpdateEvent<C>>>() {
-        error!(
-            "Events<UpdateEvent<{}>> not initialized",
-            std::any::type_name::<C>()
-        );
-        return Err(UpdateError::InternalError(format!(
-            "Event system for {} not initialized",
-            std::any::type_name::<C>()
-        )));
-    }
-
-    if !world.contains_resource::<Events<EntityNotFoundEvent>>() {
-        error!("Events<EntityNotFoundEvent> not initialized");
-        return Err(UpdateError::InternalError(
-            "Error errors system not initialized".to_string(),
-        ));
-    }
-
-    // Convert the component JSON to a string
-    let json_str = serde_json::to_string(&payload.component)?;
-
-    // Validate the JSON against the component schema
-    let update =
-        U::validate_json(&json_str).map_err(|e| UpdateError::ValidationError(e.to_string()))?;
-
-    // Send the update event
-    match world.get_resource_mut::<Events<UpdateEvent<C>>>() {
-        Some(mut event_writer) => {
-            event_writer.send(UpdateEvent {
-                id: id.clone(),
-                update,
-            });
-
-            // Run the schedule to process the event
-            schedule.run(&mut world);
-
-            // Check if any error events were generated
-            let error_events = world.resource_mut::<Events<EntityNotFoundEvent>>();
-            let mut error_reader = error_events.get_cursor();
-
-            for error in error_reader.read(&error_events) {
-                if error.id == id {
-                    match error.error_type {
-                        ErrorType::EntityNotFound => {
-                            return Err(UpdateError::NotFoundError(format!(
-                                "Entity with ID '{}' not found",
-                                id
-                            )));
-                        }
-                        ErrorType::ComponentNotFound => {
-                            return Err(UpdateError::NotFoundError(format!(
-                                "Component of type '{}' not found on entity with ID '{}'",
-                                error.component_type, id
-                            )));
-                        }
-                    }
-                }
-            }
-
-            debug!("Successfully updated component: {}", id);
-            Ok(())
-        }
-        None => {
-            error!("Events resource not found");
-            Err(UpdateError::InternalError(
-                "Event system not initialized".to_string(),
+    // Get the appropriate handler
+    let handler = update_registry
+        .get_handler(&component_type)
+        .ok_or_else(|| {
+            UpdateError::NotFoundError(format!(
+                "No handler registered for component type: {}",
+                component_type
             ))
-        }
-    }
+        })?;
+
+    // Call the handler with the original state and payload
+    handler(state.clone(), payload).await
 }
