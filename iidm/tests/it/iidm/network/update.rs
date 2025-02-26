@@ -38,39 +38,3 @@ fn test_update_with_empty_update() {
         serde_json::to_value(&original).unwrap()
     );
 }
-
-#[test]
-fn test_json_update_with_invalid_json() {
-    let mut network = create_default_network();
-    assert!(network.update_from_json("invalid json").is_err());
-}
-
-#[test]
-fn test_json_update_with_empty_json() {
-    let mut network = create_default_network();
-    let original = create_default_network();
-    network.update_from_json("{}").unwrap();
-    assert_eq!(
-        serde_json::to_value(&network).unwrap(),
-        serde_json::to_value(&original).unwrap()
-    );
-}
-
-#[test]
-fn test_json_update_with_valid_fields() {
-    let mut network = create_default_network();
-    network
-        .update_from_json(
-            r#"{
-                "caseDate": "2024-02-21T10:00:00.000+01:00",
-                "forecastDistance": 2
-            }"#,
-        )
-        .unwrap();
-
-    assert_eq!(
-        network.case_date.format(DATETIME_FORMAT).to_string(),
-        "2024-02-21T10:00:00.000+01:00"
-    );
-    assert_eq!(network.forecast_distance, 2);
-}

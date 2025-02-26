@@ -34,7 +34,7 @@ pub struct UpdateRegistry {
 impl UpdateRegistry {
     pub fn register<C, U, E>(&mut self, type_name: &str)
     where
-        C: Updatable<Updater = U, Err = E> + Component + 'static,
+        C: Updatable<Updater = U> + Component + 'static,
         U: JsonSchema + Send + Sync + 'static,
         U::Err: Display,
     {
@@ -65,7 +65,7 @@ async fn update_iidm<C, U, E>(
     Json(payload): Json<RegisterRequest>,
 ) -> Result<impl IntoResponse, UpdateError>
 where
-    C: Updatable<Updater = U, Err = E> + Component + 'static,
+    C: Updatable<Updater = U> + Component + 'static,
     U: JsonSchema + Send + Sync + 'static,
     U::Err: Display,
 {
@@ -86,7 +86,7 @@ async fn update_component<C, U, E>(
     payload: &RegisterRequest,
 ) -> Result<(), UpdateError>
 where
-    C: Updatable<Updater = U, Err = E> + Component + 'static,
+    C: Updatable<Updater = U> + Component + 'static,
     U: JsonSchema + Send + Sync + 'static,
     U::Err: Display,
 {
@@ -173,7 +173,7 @@ fn process_update<C, U, E>(
     update: U,
 ) -> Result<(), UpdateError>
 where
-    C: Updatable<Updater = U, Err = E> + 'static,
+    C: Updatable<Updater = U> + 'static,
     U: Send + Sync + 'static,
 {
     // Get event writer
@@ -245,15 +245,9 @@ mod tests {
 
     impl Updatable for MockComponent {
         type Updater = MockUpdater;
-        type Err = MockError;
 
         fn update(&mut self, _updates: Self::Updater) {
             // Mock implementation
-        }
-
-        fn update_from_json(&mut self, _json: &str) -> Result<(), Self::Err> {
-            // Mock implementation
-            Ok(())
         }
     }
 

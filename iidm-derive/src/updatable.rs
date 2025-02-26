@@ -148,19 +148,9 @@ pub fn impl_updatable_trait(ast: DeriveInput) -> TokenStream {
 
         impl Updatable for #name {
             type Updater = #update_name;
-            type Err = #error_name;
 
             fn update(&mut self, updates: Self::Updater) {
                 #(#update_impl)*
-            }
-
-            fn update_from_json(&mut self, json: &str) -> Result<(), Self::Err> {
-                serde_json::from_str(json)
-                    .map_err(|e| Self::Err::Deserialization(e))
-                    .and_then(|updates| {
-                        self.update(updates);
-                        Ok(())
-                    })
             }
         }
     }
