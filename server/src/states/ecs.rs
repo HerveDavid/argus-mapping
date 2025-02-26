@@ -42,23 +42,9 @@ macro_rules! init_updatable_components {
                 world.init_resource::<Events<UpdateEvent<$component>>>();
                 schedule.add_systems(iidm::handle_update_events::<$component>);
 
-                // Register component type with update registry
-                // Converting PascalCase to snake_case for component name
-                let component_name = stringify!($component)
-                    .chars()
-                    .enumerate()
-                    .fold(String::new(), |mut acc, (i, c)| {
-                        if i > 0 && c.is_uppercase() {
-                            acc.push('_');
-                            acc.push(c.to_lowercase().next().unwrap());
-                        } else {
-                            acc.push(c.to_lowercase().next().unwrap());
-                        }
-                        acc
-                    });
-
+                // Register component type with update registry in PascalCase
                 // Register component type with its corresponding updater and error types
-                updater.register::<$component, paste::paste! {[<$component Updater>]}, paste::paste! {[<$component Error>]}>(&component_name);
+                updater.register::<$component, paste::paste! {[<$component Updater>]}, paste::paste! {[<$component Error>]}>(&stringify!($component));
             )*
         }
     };
