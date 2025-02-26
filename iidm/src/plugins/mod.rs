@@ -9,7 +9,7 @@ where
     T::Updater: Send + Sync,
 {
     pub id: String,
-    pub update: T::Updater,
+    pub updater: T::Updater,
 }
 
 #[derive(Event, Debug, Clone)]
@@ -34,7 +34,11 @@ pub fn handle_update_events<T: Component + Updatable>(
     T: 'static,
     T::Updater: Send + Sync + Clone,
 {
-    for UpdateEvent { id, update } in update_events.read() {
+    for UpdateEvent {
+        id,
+        updater: update,
+    } in update_events.read()
+    {
         match registery.find(id) {
             Some(entity) => {
                 match query.get_mut(entity) {

@@ -174,7 +174,7 @@ fn test_handle_line_update() {
     let mut event_writer = world.resource_mut::<Events<UpdateEvent<Line>>>();
     event_writer.send(UpdateEvent {
         id: "line1".to_string(),
-        update: line_update,
+        updater: line_update,
     });
 
     // Run the schedule world to apply change
@@ -266,7 +266,7 @@ fn test_multiple_line_updates() {
         let mut event_writer = world.resource_mut::<Events<UpdateEvent<Line>>>();
         event_writer.send(UpdateEvent {
             id: "line1".to_string(),
-            update,
+            updater: update,
         });
         schedule.run(&mut world);
 

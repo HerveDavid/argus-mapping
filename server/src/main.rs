@@ -1,3 +1,5 @@
+mod components;
+mod error;
 mod handlers;
 mod states;
 
@@ -5,7 +7,7 @@ use axum::{
     routing::{get, get_service, post},
     Router,
 };
-use handlers::{index, update_iidm, upload_iidm};
+use handlers::{index, stream_iidm, update_iidm, upload_iidm};
 use states::AppState;
 use std::{path::PathBuf, sync::Arc};
 use tower_http::{services::ServeDir, trace::TraceLayer};
@@ -29,6 +31,7 @@ async fn main() {
         .route("/", get(index))
         .route("/api/iidm/upload", post(upload_iidm))
         .route("/api/iidm/update/{component_type}", post(update_iidm))
+        .route("/api/iidm/stream/{component_type}/{id}", get(stream_iidm))
         .nest_service("/static", get_service(ServeDir::new(static_path)))
         .layer(TraceLayer::new_for_http())
         .with_state(Arc::new(AppState::default()));

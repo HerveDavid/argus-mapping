@@ -23,7 +23,7 @@ macro_rules! init_identifiable_components {
                 assert_component::<$component>();
 
                 world.init_resource::<Events<RegisterEvent<$component>>>();
-                schedule.add_systems(handle_register_events::<$component>);
+                schedule.add_systems(iidm::handle_register_events::<$component>);
             )*
         }
     };
@@ -38,7 +38,7 @@ macro_rules! init_updatable_components {
                 // Static verification that the type is a valid component
                 assert_component::<$component>();
                 world.init_resource::<Events<UpdateEvent<$component>>>();
-                schedule.add_systems(handle_update_events::<$component>);
+                schedule.add_systems(iidm::handle_update_events::<$component>);
 
                 // Register component type with update registry
                 // Converting PascalCase to snake_case for component name

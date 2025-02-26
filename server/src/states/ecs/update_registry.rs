@@ -166,7 +166,7 @@ where
     // Send update event
     event_writer.send(UpdateEvent {
         id: id.to_string(),
-        update,
+        updater: update,
     });
 
     // Run the schedule to process the event
