@@ -1,7 +1,9 @@
+mod sse_registry;
 mod update_registry;
 
 use bevy_ecs::{event::Events, schedule::Schedule, world::World};
 use iidm::*;
+use sse_registry::SseRegistry;
 use tokio::sync::RwLock;
 use update_registry::UpdateRegistry;
 
@@ -122,6 +124,7 @@ pub struct EcsState {
     pub world: RwLock<World>,
     pub schedule: RwLock<Schedule>,
     pub update_registry: RwLock<UpdateRegistry>,
+    pub sse_registry: RwLock<SseRegistry>,
 }
 
 impl Default for EcsState {
@@ -134,6 +137,8 @@ impl Default for EcsState {
         let mut update_registry = UpdateRegistry::default();
         world.init_resource::<AssetRegistry>();
 
+        let sse_registry = SseRegistry::default();
+
         // Init Resources and Systems
         init_identifiable_component(&mut world, &mut schedule);
         init_updatable_components(&mut world, &mut schedule, &mut update_registry);
@@ -145,6 +150,7 @@ impl Default for EcsState {
             world: RwLock::new(world),
             schedule: RwLock::new(schedule),
             update_registry: RwLock::new(update_registry),
+            sse_registry: RwLock::new(sse_registry),
         }
     }
 }

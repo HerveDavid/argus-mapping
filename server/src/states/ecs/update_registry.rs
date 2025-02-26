@@ -94,6 +94,7 @@ where
     let ecs = state.ecs.read().await;
     let mut world = ecs.world.write().await;
     let mut schedule = ecs.schedule.write().await;
+    let sse_registry = ecs.sse_registry.read().await;
     let id = payload.id.clone();
 
     // Verify required resources exist
@@ -105,6 +106,14 @@ where
 
     // Process the update
     process_update::<C, U, E>(&mut world, &mut schedule, &id, update)?;
+
+    // TODO: Update with SSE events
+    let component_type = std::any::type_name::<C>(); // Ou extraire le nom du type d'une autre façon
+    let sse_data = serde_json::to_string(&payload.component)?;
+
+    {
+        sse_registry.publish_update(component_type, &id, &sse_data);
+    }
 
     tracing::debug!("Successfully updated component: {}", id);
     Ok(())
