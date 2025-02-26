@@ -8,8 +8,8 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use bevy_ecs::event::Events;
-use iidm::{EntityNotFoundEvent, ErrorType, JsonSchema, Updatable, UpdateEvent};
+use bevy_ecs::{component::Component, event::Events};
+use iidm::{AssetRegistry, EntityNotFoundEvent, ErrorType, JsonSchema, Updatable, UpdateEvent};
 use std::fmt::Display;
 use std::future::Future;
 use std::sync::Arc;
@@ -34,7 +34,7 @@ pub struct UpdateRegistry {
 impl UpdateRegistry {
     pub fn register<C, U, E>(&mut self, type_name: &str)
     where
-        C: Updatable<Updater = U, Err = E> + 'static,
+        C: Updatable<Updater = U, Err = E> + Component + 'static,
         U: JsonSchema + Send + Sync + 'static,
         U::Err: Display,
     {
@@ -65,7 +65,7 @@ async fn update_iidm<C, U, E>(
     Json(payload): Json<RegisterRequest>,
 ) -> Result<impl IntoResponse, UpdateError>
 where
-    C: Updatable<Updater = U, Err = E> + 'static,
+    C: Updatable<Updater = U, Err = E> + Component + 'static,
     U: JsonSchema + Send + Sync + 'static,
     U::Err: Display,
 {
@@ -86,7 +86,7 @@ async fn update_component<C, U, E>(
     payload: &RegisterRequest,
 ) -> Result<(), UpdateError>
 where
-    C: Updatable<Updater = U, Err = E> + 'static,
+    C: Updatable<Updater = U, Err = E> + Component + 'static,
     U: JsonSchema + Send + Sync + 'static,
     U::Err: Display,
 {
@@ -94,7 +94,6 @@ where
     let ecs = state.ecs.read().await;
     let mut world = ecs.world.write().await;
     let mut schedule = ecs.schedule.write().await;
-    let sse_registry = ecs.sse_registry.read().await;
     let id = payload.id.clone();
 
     // Verify required resources exist
@@ -107,12 +106,22 @@ where
     // Process the update
     process_update::<C, U, E>(&mut world, &mut schedule, &id, update)?;
 
-    // TODO: Update with SSE events
+    // TODO: Update with SSE events, very dirty code
+    let sse_registry = ecs.sse_registry.read().await;
+    let asset_registry = world.resource::<AssetRegistry>();
     let component_type = std::any::type_name::<C>(); // Ou extraire le nom du type d'une autre façon
-    let sse_data = serde_json::to_string(&payload.component)?;
 
     {
-        sse_registry.publish_update(component_type, &id, &sse_data);
+        if let Some(entity) = asset_registry.find(&id) {
+            // Si l'entité existe, récupérer le composant
+            if let Some(component) = world.entity(entity).get::<C>() {
+                // Sérialiser le composant complet
+                if let Ok(component_json) = serde_json::to_string(component) {
+                    // Envoyer le composant complet via SSE
+                    sse_registry.publish_update(component_type, &id, &component_json);
+                }
+            }
+        }
     }
 
     tracing::debug!("Successfully updated component: {}", id);
