@@ -1,7 +1,11 @@
 use std::{convert::Infallible, sync::Arc};
 
-use axum::{extract::{Path, State}, response::{sse::Event, IntoResponse, Sse}};
-use futures::stream;
+use axum::{
+    extract::{Path, State},
+    response::{sse::Event, IntoResponse, Sse},
+};
+use futures::StreamExt;
+use tokio_stream::wrappers::BroadcastStream;
 
 use crate::states::AppState;
 
@@ -13,24 +17,23 @@ pub async fn stream_iidm(
     let mut sse_registry = ecs.sse_registry.write().await;
 
     // Obtenir un canal d'abonnement pour ce composant
-    let tx = {
-        sse_registry.get_or_create_channel(&component_type, &id)
-    };
+    let tx = { sse_registry.get_or_create_channel(&component_type, &id) };
 
     // S'abonner au canal
     let rx = tx.subscribe();
 
     // Créer un stream pour SSE
-    let stream = stream::unfold(rx, |mut rx| async move {
-        match rx.recv().await {
+    let stream = BroadcastStream::new(rx).filter_map(|msg| async move {
+        match msg {
             Ok(data) => {
                 let event = Event::default().event("update").data(data);
-                Some((Ok::<_, Infallible>(event), rx))
+
+                Some(Ok::<_, Infallible>(event))
             }
             Err(_) => {
                 // Gérer la déconnexion ou l'erreur
                 let event = Event::default().comment("keep-alive");
-                Some((Ok::<_, Infallible>(event), rx))
+                Some(Ok::<_, Infallible>(event))
             }
         }
     });
