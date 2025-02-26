@@ -34,8 +34,12 @@
                     <thead>
                         <tr class="bg-gray-50">
                             <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">R (Ω)</th>
-                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">X (Ω)</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">R</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">X</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">B 1</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">B 2</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">G 1</th>
+                            <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">G 2</th>
                             <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bus 1</th>
                             <th class="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bus 2</th>
                         </tr>
@@ -46,8 +50,13 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.id }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.r }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.x }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.b1 }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.b2 }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.g1 }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.g2 }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.bus1 }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ line.bus2 }}</td>
+
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -95,6 +104,7 @@
                 {% endif %}
             {% endfor %}
         {% endfor %}
+
     {% else %}
         <pre class="bg-gray-100 p-4 rounded-lg text-red-600">{{ message }}</pre>
     {% endif %}

@@ -436,10 +436,10 @@ pub struct Line {
     pub id: String,
     pub r: f64,
     pub x: f64,
-    pub g1: f64,
     pub b1: f64,
-    pub g2: f64,
     pub b2: f64,
+    pub g1: f64,
+    pub g2: f64,
     #[serde(rename = "voltageLevelId1")]
     pub voltage_level_id1: String,
     pub bus1: String,
