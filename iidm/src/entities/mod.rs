@@ -3,6 +3,7 @@ use crate::plugins::RegisterEvent;
 
 use bevy_ecs::component::Component;
 use chrono::{DateTime, FixedOffset};
+use derive_more::Display;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -91,23 +92,14 @@ pub struct VoltageLevel {
     pub bus_breaker_topology: Option<BusBreakerTopology>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Component, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Component, JsonSchema, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TopologyKind {
     NodeBreaker,
     BusBreaker,
 }
 
-impl std::fmt::Display for TopologyKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TopologyKind::NodeBreaker => write!(f, "NodeBreaker"),
-            TopologyKind::BusBreaker => write!(f, "BusBreaker"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Component, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Component, JsonSchema, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum EnergySource {
     Hydro,
@@ -116,19 +108,6 @@ pub enum EnergySource {
     Thermal,
     Solar,
     Other,
-}
-
-impl std::fmt::Display for EnergySource {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            EnergySource::Hydro => write!(f, "Hydro"),
-            EnergySource::Nuclear => write!(f, "Nuclear"),
-            EnergySource::Wind => write!(f, "Wind"),
-            EnergySource::Thermal => write!(f, "Thermal"),
-            EnergySource::Solar => write!(f, "Solar"),
-            EnergySource::Other => write!(f, "Other"),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable, JsonSchema)]
@@ -195,22 +174,12 @@ pub struct Load {
     pub zip_model: Option<ZipLoadModel>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Component, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Component, JsonSchema, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LoadType {
     Undefined,
     Auxiliary,
     Fictitious,
-}
-
-impl std::fmt::Display for LoadType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            LoadType::Undefined => write!(f, "Undefined"),
-            LoadType::Auxiliary => write!(f, "Auxililary"),
-            LoadType::Fictitious => write!(f, "Fictitious"),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Updatable, JsonSchema)]
@@ -397,7 +366,7 @@ pub struct PhaseTapChanger {
     pub steps: Vec<PhaseTapStep>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PhaseRegulationMode {
     CurrentLimiter,
@@ -405,30 +374,11 @@ pub enum PhaseRegulationMode {
     FixedTap,
 }
 
-impl std::fmt::Display for PhaseRegulationMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            PhaseRegulationMode::CurrentLimiter => write!(f, "CurrentLimiter"),
-            PhaseRegulationMode::ActivePowerControl => write!(f, "ActivePowerControl"),
-            PhaseRegulationMode::FixedTap => write!(f, "FixedTap"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RatioRegulationMode {
     Voltage,
     ReactivePower,
-}
-
-impl std::fmt::Display for RatioRegulationMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            RatioRegulationMode::Voltage => write!(f, "Voltage"),
-            RatioRegulationMode::ReactivePower => write!(f, "ReactivePower"),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable, JsonSchema)]
@@ -468,22 +418,12 @@ pub struct Switch {
     pub voltage_level_id: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum SwitchKind {
     Breaker,
     Disconnector,
     LoadBreakSwitch,
-}
-
-impl std::fmt::Display for SwitchKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SwitchKind::Breaker => write!(f, "Breaker"),
-            SwitchKind::Disconnector => write!(f, "Voltage"),
-            SwitchKind::LoadBreakSwitch => write!(f, "LoadBreakSwitch "),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable, JsonSchema)]
@@ -518,22 +458,12 @@ pub struct StaticVarCompensator {
     pub connectable_bus: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum StaticVarCompensatorRegulationMode {
     Voltage,
     ReactivePower,
     Off,
-}
-
-impl std::fmt::Display for StaticVarCompensatorRegulationMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            StaticVarCompensatorRegulationMode::Voltage => write!(f, "Voltage"),
-            StaticVarCompensatorRegulationMode::ReactivePower => write!(f, "ReactivePower"),
-            StaticVarCompensatorRegulationMode::Off => write!(f, "Off"),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable, JsonSchema)]
@@ -597,24 +527,11 @@ pub struct HvdcConverterStation {
     pub reactive_power_setpoint: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ConvertersMode {
     Side1RectifierSide2Inverter,
     Side1InverterSide2Rectifier,
-}
-
-impl std::fmt::Display for ConvertersMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ConvertersMode::Side1RectifierSide2Inverter => {
-                write!(f, "Side1RectifierSide2Inverter")
-            }
-            ConvertersMode::Side1InverterSide2Rectifier => {
-                write!(f, "Side1InverterSide2Rectifier ")
-            }
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Component, Identifiable, Updatable, JsonSchema)]
@@ -658,20 +575,10 @@ pub struct TemporaryLimit {
     pub value: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component, JsonSchema, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Side {
     One,
     Two,
     Three,
-}
-
-impl std::fmt::Display for Side {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Side::One => write!(f, "One"),
-            Side::Two => write!(f, "Two"),
-            Side::Three => write!(f, "Three"),
-        }
-    }
 }

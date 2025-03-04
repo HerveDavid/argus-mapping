@@ -10,7 +10,7 @@ use axum::{
 use handlers::{index, stream_iidm, update_iidm, upload_iidm};
 use states::AppState;
 use std::{path::PathBuf, sync::Arc};
-use tower_http::{services::ServeDir, trace::TraceLayer};
+use tower_http::{limit::RequestBodyLimitLayer, services::ServeDir, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -34,6 +34,7 @@ async fn main() {
         .route("/api/iidm/stream/{component_type}/{id}", get(stream_iidm))
         .nest_service("/static", get_service(ServeDir::new(static_path)))
         .layer(TraceLayer::new_for_http())
+        .layer(RequestBodyLimitLayer::new(200 * 1024 * 1024))
         .with_state(Arc::new(AppState::default()));
 
     // Start server
